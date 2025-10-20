@@ -46,5 +46,13 @@
     "category": "طازج",
     "image": "https://raw.githubusercontent.com/farok6799/Rashedy-Menu/main/images/1760948599968_images__5_.jpg",
     "addedAt": "2025-10-20T08:23:21.538Z"
+  },
+  {
+    "name": "وجبة الرشيدي",
+    "price": "450",
+    "desc": "قطعتين بلطي مقلي+طبق ارز",
+    "category": "الوجبات",
+    "image": "https://raw.githubusercontent.com/farok6799/Rashedy-Menu/main/images/1760948736522_Fried-tilapia-fish.jpg",
+    "addedAt": "2025-10-20T08:25:40.877Z"
   }
 ]
