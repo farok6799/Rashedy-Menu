@@ -30,5 +30,13 @@
     "category": "مشوي",
     "image": "https://raw.githubusercontent.com/farok6799/Rashedy-Menu/main/images/1760948190886_web-2.jpg",
     "addedAt": "2025-10-20T08:16:35.860Z"
+  },
+  {
+    "name": "جندوفلي طازج",
+    "price": "500",
+    "desc": "",
+    "category": "سي فود",
+    "image": "https://raw.githubusercontent.com/farok6799/Rashedy-Menu/main/images/1760948390449_download__3_.jpg",
+    "addedAt": "2025-10-20T08:19:52.111Z"
   }
 ]
