@@ -38,5 +38,13 @@
     "category": "سي فود",
     "image": "https://raw.githubusercontent.com/farok6799/Rashedy-Menu/main/images/1760948390449_download__3_.jpg",
     "addedAt": "2025-10-20T08:19:52.111Z"
+  },
+  {
+    "name": "بلطي طازج",
+    "price": "150",
+    "desc": "",
+    "category": "طازج",
+    "image": "https://raw.githubusercontent.com/farok6799/Rashedy-Menu/main/images/1760948599968_images__5_.jpg",
+    "addedAt": "2025-10-20T08:23:21.538Z"
   }
 ]
