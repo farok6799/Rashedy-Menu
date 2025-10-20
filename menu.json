@@ -22,5 +22,13 @@
     "category": "مقلي",
     "image": "https://raw.githubusercontent.com/farok6799/Rashedy-Menu/main/images/1760948022322_download.jpeg",
     "addedAt": "2025-10-20T08:13:43.842Z"
+  },
+  {
+    "name": "بلطي مشوي",
+    "price": "250",
+    "desc": "",
+    "category": "مشوي",
+    "image": "https://raw.githubusercontent.com/farok6799/Rashedy-Menu/main/images/1760948190886_web-2.jpg",
+    "addedAt": "2025-10-20T08:16:35.860Z"
   }
 ]
