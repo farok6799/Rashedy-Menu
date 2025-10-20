@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>أسماك الرشيدي — منيو</title>
+<style>
+  /* --- صفحة أنيقة للكتاب والمنيو --- */
+  :root{
+    --bg:#050507; --card:#0f1114; --accent:#c9a36b; --muted:#9aa0a6;
+  }
+  *{box-sizing:border-box;font-family:system-ui,'Segoe UI',Tahoma,'Noto Sans Arabic',sans-serif}
+  body{margin:0;min-height:100vh;background:linear-gradient(180deg,#050507,#0b0c0f);color:#fff;display:flex;align-items:center;justify-content:center;padding:30px}
+  .container{width:100%;max-width:1100px}
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  header h1{color:var(--accent);font-size:28px;margin:0}
+  .adminBtn{background:transparent;border:0;color:#fff;font-size:26px;cursor:pointer;padding:6px 10px;border-radius:8px}
+  /* book */
+  .bookScene{perspective:2000px;width:100%;height:560px;display:flex;align-items:center;justify-content:center}
+  .book{width:760px;height:520px;position:relative;transform-style:preserve-3d}
+  .cover{
+    position:absolute;width:100%;height:100%;left:0;top:0;border-radius:12px;background:linear-gradient(135deg,#141414,#2b2b2b);display:flex;align-items:center;justify-content:center;z-index:10;
+    color:var(--accent);font-weight:800;font-size:44px;cursor:pointer;box-shadow:0 40px 80px rgba(0,0,0,0.7);
+    transform-origin:left;transition:transform 1s cubic-bezier(.22,.9,.32,1);
+  }
+  .book.open .cover{transform:rotateY(-180deg)}
+  .pages{position:absolute;inset:0;border-radius:12px;background:#fbf8f3;color:#111;box-shadow:inset 0 6px 30px rgba(0,0,0,0.25);overflow:hidden;transform-style:preserve-3d}
+  .page{position:absolute;inset:0;backface-visibility:hidden;transform-origin:left;transition:transform 900ms cubic-bezier(.22,.9,.32,1), z-index 0s 450ms;transform-style:preserve-3d}
+  .page-front, .page-back{position:absolute;inset:0;padding:28px;backface-visibility:hidden;display:flex;flex-direction:column}
+  .page-front{background:#fbf8f3}
+  .page-back{background:#fdfcf9;transform:rotateY(180deg)}
+  .page h2{margin:0 0 8px 0;color:#c9a36b; position: relative; z-index: 1;} /* z-index to ensure title is above grid */
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:10px}
+  .card{background:rgba(0,0,0,0.03);padding:10px;border-radius:10px;display:flex;gap:10px;align-items:center}
+  .card img{width:120px;height:80px;object-fit:cover;border-radius:8px}
+  .card .meta{flex:1}
+  .price{color:var(--accent);font-weight:700}
+  .controls{position:fixed;right:18px;bottom:18px;display:flex;gap:8px}
+  .btn{background:rgba(255,255,255,0.06);border:0;padding:10px 12px;border-radius:8px;color:var(--muted);cursor:pointer}
+  /* popup styles */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;z-index:9999}
+  .panel{background:#161616;padding:18px;border-radius:12px;width:360px;box-shadow:0 20px 60px rgba(0,0,0,0.8)}
+  input,select,textarea{width:100%;padding:10px;margin-top:8px;border-radius:8px;border:0;background:#222;color:#fff}
+  label{color:#ddd;font-size:13px;margin-top:8px;display:block}
+  .small{font-size:13px;color:#aaa;margin-top:8px}
+  .danger{background:#ff4d4d;color:#111}
+  footer.small{margin-top:10px;color:#888;font-size:12px}
+  @media (max-width:880px){ .book{width:92vw;height:62vh} .grid{grid-template-columns:1fr} .card img{width:90px;height:70px} .panel{width:92vw} }
+  #pwToggle{position:absolute;left:10px;top:50%;transform:translateY(-50%);cursor:pointer;user-select:none;}
+</style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>أسماك الرشيدي</h1>
+      <button class="adminBtn" id="adminBtn" title="إدارة">⋮</button>
+    </header>
+
+    <div class="bookScene">
+      <div class="book" id="book">
+        <div class="cover" id="cover">أسماك الرشيدي</div>
+        <div class="pages" id="pagesArea">
+          <!-- صفحات ديناميكيًا -->
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="btn" id="prevBtn">الصفحة السابقة</button>
+      <button class="btn" id="nextBtn">الصفحة التالية</button>
+    </div>
+  </div>
+
+  <!-- Overlay: password prompt -->
+  <div class="overlay" id="passwordOverlay">
+    <div class="panel">
+      <h3>أدخل كلمة المرور</h3>
+      <div style="position:relative;">
+        <input type="password" id="pwInput" placeholder="كلمة المرور">
+        <span id="pwToggle">👁️</span>
+      </div>
+      <label class="small">مطلوب للتحكم — يمكنك تعديل الـ hash في الكود</label>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn" id="pwSubmit">دخول</button>
+        <button class="btn" id="pwCancel">إلغاء</button>
+      </div>
+      <hr style="margin-top:12px;border:none;border-top:1px solid rgba(255,255,255,0.04)">
+      <div class="small">لو نجحت ستستطيع رفع صور وصنف جديد. ستطلب الصفحة بعد ذلك الـ GitHub Token (مرة واحدة).</div>
+    </div>
+  </div>
+
+  <!-- Overlay: admin upload -->
+  <div class="overlay" id="adminOverlay">
+    <div class="panel">
+      <h3>إضافة صنف جديد</h3>
+
+      <label>الفئة</label>
+      <input id="catInput" placeholder="مثال: اسماك">
+
+      <label>اسم الصنف</label>
+      <input id="nameInput" placeholder="اسم الصنف">
+
+      <label>السعر</label>
+      <input id="priceInput" placeholder="السعر">
+
+      <label>الوصف</label>
+      <textarea id="descInput" placeholder="وصف (اختياري)"></textarea>
+
+      <label>الصورة (سيتم رفعها إلى الريبو)</label>
+      <input type="file" id="imgInput" accept="image/*">
+
+      <label class="small">أدخل GitHub Personal Access Token (سيُخزن مؤقتًا في المتصفح فقط)</label>
+      <input id="tokenInput" placeholder="ghp_xxx... (أدخل التوكن هنا مرة واحدة)">
+
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn" id="uploadBtn">إضافة ورفع</button>
+        <button class="btn danger" id="closeAdminBtn">إغلاق</button>
+      </div>
+
+      <footer class="small">ملاحظة: التوكن مطلوب للكتابة في الريبو؛ صلاحية repo كافية. بعد الاستخدام يمكنك مسحه من إعدادات GitHub.</footer>
+    </div>
+  </div>
+
+<script>
+/* ================== إعدادات ريبّو ================== */
+const GITHUB_OWNER = 'farok6799';
+const GITHUB_REPO  = 'Rashedy-Menu';
+const GITHUB_BRANCH = 'main'; // أو 'master' لو بتستخدمه
+const MENU_JSON_PATH = 'menu.json';
+const IMAGES_FOLDER = 'images/';
+
+/* ============ إعداد باسورد مخزن على شكل هاش SHA-256 ============
+   القيمة هنا تمثل hash('1234') بالـ SHA-256. لتغيير الباسورد:
+   احسب SHA-256 لكلمة جديدة (يمكنني أديك أداة لو حبيت) وغيّر القيمة.
+   current for '1234' hashed:
+*/
+const PASSWORD_HASH = '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4'; // sha256("1234")
+
+/* ================== عناصر DOM ================== */
+const adminBtn = document.getElementById('adminBtn');
+const passwordOverlay = document.getElementById('passwordOverlay');
+const adminOverlay = document.getElementById('adminOverlay');
+const pwSubmit = document.getElementById('pwSubmit');
+const pwCancel = document.getElementById('pwCancel');
+const pwInput = document.getElementById('pwInput');
+const uploadBtn = document.getElementById('uploadBtn');
+const closeAdminBtn = document.getElementById('closeAdminBtn');
+const tokenInput = document.getElementById('tokenInput');
+
+const nameInput = document.getElementById('nameInput');
+const priceInput = document.getElementById('priceInput');
+const descInput = document.getElementById('descInput');
+const catInput = document.getElementById('catInput');
+const imgInput = document.getElementById('imgInput');
+
+const pagesArea = document.getElementById('pagesArea');
+const cover = document.getElementById('cover');
+const book = document.getElementById('book');
+const nextBtn = document.getElementById('nextBtn');
+const prevBtn = document.getElementById('prevBtn');
+
+let currentPageIndex = -1; // -1 means cover visible
+let pages = []; // array of category pages
+
+/* ========== مساعدة: حساب SHA-256 باستخدام Web Crypto ========= */
+async function sha256(text){
+  const enc = new TextEncoder();
+  const data = enc.encode(text);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+/* ========== فتح/إغلاق overlays ========== */
+adminBtn.addEventListener('click', ()=> {
+  if (!window.crypto || !window.crypto.subtle) {
+    alert('خطأ: لا يمكن التحقق من كلمة المرور.\n\nالسبب: هذه الصفحة يجب أن تعمل من خلال خادم ويب (localhost أو https) وليس كملف مباشر.\n\nالحل: استخدم إضافة "Live Server" في VS Code لتشغيلها.');
+    return;
+  }
+  passwordOverlay.style.display = 'flex';
+});
+pwCancel.addEventListener('click', ()=> passwordOverlay.style.display = 'none');
+
+/* تحقق من الباسورد (مقارنة هاش) */
+pwSubmit.addEventListener('click', async ()=> {
+  const tryHash = await sha256((pwInput.value || '').trim());
+  // --- سطر التشخيص: اطبع الهاش الذي تم حسابه والهاش الصحيح للمقارنة ---
+  console.log('الهاش الذي أدخلته:', tryHash, '\nالهاش الصحيح:', PASSWORD_HASH);
+  if(tryHash === PASSWORD_HASH){
+    passwordOverlay.style.display = 'none';
+    adminOverlay.style.display = 'flex';
+    // ممكن أن نجلب التوكن من sessionStorage لو المستخدم دخله قبل كده
+    tokenInput.value = sessionStorage.getItem('GHTOKEN') || '';
+  } else {
+    alert('كلمة المرور خطأ!');
+  }
+});
+
+/* إغلاق admin */
+closeAdminBtn.addEventListener('click', ()=> {
+  adminOverlay.style.display = 'none';
+});
+
+/* إظهار/إخفاء كلمة المرور */
+const pwToggle = document.getElementById('pwToggle');
+pwToggle.addEventListener('click', () => {
+  const isPassword = pwInput.type === 'password';
+  pwInput.type = isPassword ? 'text' : 'password';
+  pwToggle.textContent = isPassword ? '🙈' : '👁️';
+});
+
+/* ================= GitHub API helpers ================= */
+
+/* قراءة ملف من GitHub (محتوى base64 + sha) */
+async function githubGetFile(path){
+  const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${encodeURIComponent(path)}?ref=${GITHUB_BRANCH}`;
+  const res = await fetch(url);
+  if(res.status === 200){
+    const data = await res.json();
+    return data; // { content (base64), sha, path, ... }
+  } else if(res.status === 404){
+    return null;
+  } else {
+    const t = await res.text();
+    throw new Error('GitHub GET error: ' + res.status + ' - ' + t);
+  }
+}
+
+/* رفع/تحديث ملف إلى GitHub (يتطلب توكن) */
+async function githubPutFile(path, base64content, message, sha=null, token){
+  const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${encodeURIComponent(path)}`;
+  const body = { message, content: base64content, branch: GITHUB_BRANCH };
+  if(sha) body.sha = sha;
+  const res = await fetch(url, {
+    method:'PUT',
+    headers: {
+      'Authorization': 'token ' + token,
+      'Accept': 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+  if(!res.ok){
+    const t = await res.text();
+    throw new Error('GitHub PUT error: ' + res.status + ' - ' + t);
+  }
+  return await res.json();
+}
+
+/* تحميل menu.json من الريبو كـ object */
+async function loadMenuJson(){
+  try{
+    const file = await githubGetFile(MENU_JSON_PATH);
+    if(!file) return [];
+    const jsonString = base64ToUtf8(file.content.replace(/\n/g,'')); // فك ترميز Base64 مع دعم UTF-8
+    return JSON.parse(jsonString);
+  }catch(err){
+    console.error(err);
+    return [];
+  }
+}
+
+/* عرض المنيو: نقسم حسب الفئات */
+async function renderMenu(){
+  const menu = await loadMenuJson();
+  // group by category
+  const cats = {};
+  for(const it of menu){
+    const c = it.category || 'غير مصنف';
+    if(!cats[c]) cats[c] = [];
+    cats[c].push(it);
+  }
+
+  // بناء الواجهه: كل فئة صفحة
+  pagesArea.innerHTML = '';
+  pages = [];
+  for(const [cat, items] of Object.entries(cats)){
+    const page = document.createElement('div');
+    page.className = 'page'; // لا تضع padding هنا
+    // إنشاء وجهين للصفحة
+    page.innerHTML = `
+      <div class="page-front"></div>
+      <div class="page-back">
+        <h2>${escapeHtml(cat)}</h2>
+        <div class="grid"></div>
+      </div>
+    `;
+    const grid = page.querySelector('.page-back .grid');
+    for(const it of items){
+      const card = document.createElement('div');
+      card.className = 'card';
+      const imgUrl = it.image || '';
+      card.innerHTML = `
+        <img 
+          src="${imgUrl}" 
+          alt="${escapeHtml(it.name)}" 
+          loading="lazy" 
+          onerror="this.style.display='none'"
+        >
+        <div class="meta">
+          <div style="font-weight:700">${escapeHtml(it.name)}</div>
+          <div style="color:#888;font-size:13px">${escapeHtml(it.desc||'')}</div>
+          <div class="price">${escapeHtml(it.price)}</div>
+        </div>
+      `;
+      grid.appendChild(card);
+    }
+    pagesArea.appendChild(page);
+    pages.push(page);
+  }
+
+  // افتراضياً لو مفيش صفحات ابقِ الغلاف ظاهر فقط
+  currentPageIndex = -1;
+  applyFlipState();
+}
+
+/* تعابير مساعدة */
+function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]); }
+
+/* تحكم بالصفحات (تقليب) */
+function applyFlipState(){
+  const total = pages.length;
+  // currentPageIndex هو مؤشر آخر صفحة تم قلبها. -1 يعني الغلاف مغلق.
+  // 0 يعني الصفحة الأولى مقلوبة، ونرى ظهرها ووجه الصفحة الثانية.
+  pages.forEach((page, i) => {
+    const isFlipped = i <= currentPageIndex;
+    const isCurrentVisiblePage = i === currentPageIndex + 1;
+
+    page.style.transform = isFlipped ? 'rotateY(-180deg)' : 'rotateY(0deg)';
+    
+    // z-index: الصفحات المقلوبة تأخذ ترتيب تصاعدي من الأسفل.
+    // الصفحات غير المقلوبة تأخذ ترتيب تنازلي من الأعلى.
+    page.style.zIndex = isFlipped ? i + 1 : total - i;
+
+    // الأهم: نمنع تداخل المحتوى ثلاثي الأبعاد
+    page.style.transformStyle = isCurrentVisiblePage ? 'preserve-3d' : 'flat';
+  });
+  book.classList.toggle('open', currentPageIndex > -1); // افتح الكتاب لو أي صفحة مقلوبة
+}
+
+/* أزرار التالي / السابق */
+nextBtn.addEventListener('click', ()=> {
+  if(currentPageIndex < pages.length - 1) currentPageIndex++;
+  applyFlipState();
+});
+prevBtn.addEventListener('click', ()=> {
+  if(currentPageIndex > -1) currentPageIndex--;
+  applyFlipState();
+});
+cover.addEventListener('click', ()=> {
+  // اضغط الغلاف يفتحه للصفحة الأولى
+  if(pages.length>0){
+    currentPageIndex = 0;
+    applyFlipState();
+  }
+});
+
+/* ============== رفع صورة وحدث menu.json ============== */
+async function uploadItem(){
+  const name = nameInput.value.trim();
+  const price = priceInput.value.trim();
+  const desc = descInput.value.trim();
+  const category = (catInput.value.trim() || 'غير مصنف');
+  const file = imgInput.files[0];
+  const token = tokenInput.value.trim() || sessionStorage.getItem('GHTOKEN');
+
+  if(!name || !price || !file){
+    return alert('من فضلك اكمل الاسم والسعر واختر صورة.');
+  }
+  if(!token){
+    return alert('احتاج GitHub Token عشان ارفع الصورة واحدّث menu.json. ضعه في الحقل أو سجّل الدخول مؤقتًا.');
+  }
+
+  try{
+    // حفظ التوكن مؤقتاً في sessionStorage (مريح أثناء الجلسة)
+    sessionStorage.setItem('GHTOKEN', token);
+
+    // 1) نرفع الصورة إلى images/<filename>
+    const filename = makeSafeFilename(file.name);
+    const targetPath = IMAGES_FOLDER + filename;
+
+    // اقرأ الملف كـ base64
+    const base64 = await fileToBase64(file); // returns base64 string without data:...
+    await githubPutFile(targetPath, base64, `Add image ${filename}`, null, token);
+    // بعد رفع الصورة نكوّن رابط الوصول الخام للصورة:
+    const rawUrl = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${targetPath}`;
+
+    // 2) نقرأ menu.json الحالي
+    const existingFile = await githubGetFile(MENU_JSON_PATH);
+    let menu = [];
+    let sha = null;
+    if(existingFile && existingFile.content){ // تحقق من وجود الملف ومحتواه
+      sha = existingFile.sha;
+      menu = JSON.parse(base64ToUtf8(existingFile.content.replace(/\n/g,'')));
+    } else {
+      menu = [];
+    }
+
+    // 3) نضيف العنصر الجديد
+    const newItem = { name, price, desc, category, image: rawUrl, addedAt: new Date().toISOString() };
+    menu.push(newItem);
+
+    // 4) نرفع menu.json مع sha لو موجود
+    const jsonString = JSON.stringify(menu, null, 2);
+    await githubPutFile(MENU_JSON_PATH, utf8ToBase64(jsonString), `Add menu item ${name}`, sha, token);
+
+    alert('✅ تم إضافة الصنف بنجاح إلى الريبو!');
+    // تنظيف الحقول
+    nameInput.value = priceInput.value = descInput.value = '';
+    catInput.value = '';
+    imgInput.value = '';
+    // إعادة تحميل العرض
+    await renderMenu();
+
+  }catch(err){
+    console.error(err);
+    alert('حدث خطأ أثناء الرفع: ' + err.message);
+  }
+}
+
+/* تحويل نص UTF-8 إلى Base64 (الطريقة الحديثة) */
+function utf8ToBase64(str) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(str);
+  let binary = '';
+  for (let i = 0; i < data.length; i++) {
+    binary += String.fromCharCode(data[i]);
+  }
+  return btoa(binary);
+}
+
+/* تحويل Base64 إلى نص UTF-8 (الطريقة الحديثة) */
+function base64ToUtf8(b64) {
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  const decoder = new TextDecoder('utf-8');
+  return decoder.decode(bytes);
+}
+
+
+/* تحويل ملف إلى base64 (بدون data:prefix) */
+function fileToBase64(file){
+  return new Promise((res, rej)=>{
+    const reader = new FileReader();
+    reader.onload = ()=> {
+      const result = reader.result;
+      // result مثال: "data:image/png;base64,...."
+      const comma = result.indexOf(',');
+      res(result.substring(comma+1));
+    };
+    reader.onerror = e=> rej(e);
+    reader.readAsDataURL(file);
+  });
+}
+
+/* sanitize filename */
+function makeSafeFilename(name){
+  // إضافة وقت لتجنب الكتابة فوق ملف بنفس الاسم
+  const ts = Date.now();
+  const clean = name.replace(/[^a-zA-Z0-9\.\-_]/g, '_');
+  return `${ts}_${clean}`;
+}
+
+/* ================ تهيئة العرض عند التحميل ================ */
+renderMenu();
+
+/* ================ أحداث رفع ================ */
+uploadBtn.addEventListener('click', uploadItem);
+
+/* ========= مساعدة للاختبار: مسح Token مؤقت من sessionStorage ========= */
+window.clearToken = ()=> { sessionStorage.removeItem('GHTOKEN'); alert('Token cleared from sessionStorage'); }
+
+/* ========= المساعدة النهائية: لو عايز تغير الباسورد =========
+   - احسب sha256 لكلمة جديدة (يمكنك استدعاء window.sha256('newpass') في console)
+   - ضَع الناتج مكان PASSWORD_HASH في بداية الكود
+*/
+
+</script>
+</body>
+</html>
