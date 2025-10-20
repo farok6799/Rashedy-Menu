@@ -6,5 +6,13 @@
     "category": "مشوي",
     "image": "https://raw.githubusercontent.com/farok6799/Rashedy-Menu/main/images/1760947231112_web-2.jpg",
     "addedAt": "2025-10-20T08:00:36.252Z"
+  },
+  {
+    "name": "جمبري طازج",
+    "price": "300",
+    "desc": "",
+    "category": "طازج",
+    "image": "https://raw.githubusercontent.com/farok6799/Rashedy-Menu/main/images/1760947351293______.jpeg",
+    "addedAt": "2025-10-20T08:02:32.777Z"
   }
 ]
