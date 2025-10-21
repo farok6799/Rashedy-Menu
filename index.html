@@ -615,24 +615,14 @@ saveEditBtn.addEventListener('click', async () => {
 
 /* تحويل نص UTF-8 إلى Base64 (الطريقة الحديثة) */
 function utf8ToBase64(str) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(str);
-  let binary = '';
-  for (let i = 0; i < data.length; i++) {
-    binary += String.fromCharCode(data[i]);
-  }
-  return btoa(binary);
+  // unescape(encodeURIComponent(str)) handles UTF-8 characters correctly before btoa
+  return btoa(unescape(encodeURIComponent(str)));
 }
 
 /* تحويل Base64 إلى نص UTF-8 (الطريقة الحديثة) */
 function base64ToUtf8(b64) {
-  const binary = atob(b64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  const decoder = new TextDecoder('utf-8');
-  return decoder.decode(bytes);
+  // decodeURIComponent(escape(atob(b64))) handles UTF-8 characters correctly after atob
+  return decodeURIComponent(escape(atob(b64)));
 }
 
 
