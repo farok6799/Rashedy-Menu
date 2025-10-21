@@ -54,5 +54,13 @@
     "category": "الوجبات",
     "image": "https://raw.githubusercontent.com/farok6799/Rashedy-Menu/main/images/1760948736522_Fried-tilapia-fish.jpg",
     "addedAt": "2025-10-20T08:25:40.877Z"
+  },
+  {
+    "name": "كابوريا طازجه",
+    "price": "500",
+    "desc": "",
+    "category": "كابوريا",
+    "image": "https://raw.githubusercontent.com/farok6799/Rashedy-Menu/main/images/1761026941025_download__42_.jpg",
+    "addedAt": "2025-10-21T06:09:02.632Z"
   }
 ]
