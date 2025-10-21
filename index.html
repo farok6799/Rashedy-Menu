@@ -23,7 +23,8 @@
     color:var(--accent);font-weight:800;font-size:44px;cursor:pointer;box-shadow:0 40px 80px rgba(0,0,0,0.7);
     transform-origin:left;transition:transform 1s cubic-bezier(.22,.9,.32,1);
   }
-  .book.open .cover{transform:rotateY(-180deg)}
+  /* عند فتح الكتاب، الغلاف يختفي للخلف */
+  .book.open .cover{transform:rotateY(-180deg); z-index: -1;}
   .pages{position:absolute;inset:0;border-radius:12px;background:#fbf8f3;color:#111;box-shadow:inset 0 6px 30px rgba(0,0,0,0.25);overflow:hidden;transform-style:preserve-3d}
   .page{position:absolute;inset:0;backface-visibility:hidden;transform-origin:left;transition:transform 900ms cubic-bezier(.22,.9,.32,1), z-index 0s 450ms;transform-style:preserve-3d}
   .page-front, .page-back {position:absolute;inset:0;padding:28px;backface-visibility:hidden;display:flex;flex-direction:column}
@@ -36,6 +37,11 @@
   .card .meta{flex:1}
   .price{color:var(--accent);font-weight:700}
   .controls{position:fixed;right:18px;bottom:18px;display:flex;gap:8px}
+  /* Admin controls on cards */
+  .card-admin-controls{display:none; gap:6px; margin-top:8px;}
+  body.admin-mode .card-admin-controls{display:flex;}
+  .card-admin-controls button{font-size:12px; padding:4px 8px; border-radius:6px; cursor:pointer; border:0; background:rgba(0,0,0,0.08);}
+  .card-admin-controls .delete-btn{background:#ff4d4d;color:#fff}
   .btn{background:rgba(255,255,255,0.06);border:0;padding:10px 12px;border-radius:8px;color:var(--muted);cursor:pointer}
   /* popup styles */
   .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;z-index:9999}
@@ -46,6 +52,10 @@
   .danger{background:#ff4d4d;color:#111}
   footer.small{margin-top:10px;color:#888;font-size:12px}
   @media (max-width:880px){ .book{width:92vw;height:62vh} .grid{grid-template-columns:1fr} .card img{width:90px;height:70px} .panel{width:92vw} }
+  /* Helper classes */
+  .pos-relative{position:relative}
+  .flex-gap{display:flex;gap:8px;margin-top:12px}
+  .item-name{font-weight:700}
   #pwToggle{position:absolute;left:10px;top:50%;transform:translateY(-50%);cursor:pointer;user-select:none;}
 </style>
 </head>
@@ -75,12 +85,12 @@
   <div class="overlay" id="passwordOverlay">
     <div class="panel">
       <h3>أدخل كلمة المرور</h3>
-      <div style="position:relative;">
+      <div class="pos-relative">
         <input type="password" id="pwInput" placeholder="كلمة المرور">
         <span id="pwToggle">👁️</span>
       </div>
       <label class="small">مطلوب للتحكم — يمكنك تعديل الـ hash في الكود</label>
-      <div style="display:flex;gap:8px;margin-top:12px">
+      <div class="flex-gap">
         <button class="btn" id="pwSubmit">دخول</button>
         <button class="btn" id="pwCancel">إلغاء</button>
       </div>
@@ -112,12 +122,46 @@
       <label class="small">أدخل GitHub Personal Access Token (سيُخزن مؤقتًا في المتصفح فقط)</label>
       <input id="tokenInput" placeholder="ghp_xxx... (أدخل التوكن هنا مرة واحدة)">
 
-      <div style="display:flex;gap:8px;margin-top:12px">
+      <div class="flex-gap">
         <button class="btn" id="uploadBtn">إضافة ورفع</button>
-        <button class="btn danger" id="closeAdminBtn">إغلاق</button>
-      </div>
+        <button class="btn danger" id="closeAdminBtn">إلغاء</button>
+        <!-- زر الخروج من وضع المدير -->
+        <button class="btn" id="logoutAdminBtn" style="background:#555;">خروج</button>
 
+      </div>
       <footer class="small">ملاحظة: التوكن مطلوب للكتابة في الريبو؛ صلاحية repo كافية. بعد الاستخدام يمكنك مسحه من إعدادات GitHub.</footer>
+
+      <hr style="margin-top:16px;border:none;border-top:1px solid rgba(255,255,255,0.1)">
+      <h4 style="margin-bottom:8px;">تغيير كلمة المرور</h4>
+      <input type="password" id="newPwInput" placeholder="كلمة المرور الجديدة">
+      <button class="btn" id="changePwBtn" style="margin-top:8px;width:100%;background:rgba(255,255,255,0.1);">تحديث كلمة المرور</button>
+    </div>
+  </div>
+
+  <!-- Overlay: edit item -->
+  <div class="overlay" id="editOverlay">
+    <div class="panel">
+      <h3>تعديل صنف</h3>
+      <input type="hidden" id="editIdInput">
+
+      <label>الفئة</label>
+      <input id="editCatInput" placeholder="مثال: اسماك">
+
+      <label>اسم الصنف</label>
+      <input id="editNameInput" placeholder="اسم الصنف">
+
+      <label>السعر</label>
+      <input id="editPriceInput" placeholder="السعر">
+
+      <label>الوصف</label>
+      <textarea id="editDescInput" placeholder="وصف (اختياري)"></textarea>
+
+      <div class="small">ملاحظة: تعديل الصورة يتطلب حذف الصنف وإضافته من جديد.</div>
+
+      <div class="flex-gap">
+        <button class="btn" id="saveEditBtn">حفظ التعديلات</button>
+        <button class="btn danger" id="closeEditBtn">إلغاء</button>
+      </div>
     </div>
   </div>
 
@@ -127,25 +171,23 @@ const GITHUB_OWNER = 'farok6799';
 const GITHUB_REPO  = 'Rashedy-Menu';
 const GITHUB_BRANCH = 'main'; // أو 'master' لو بتستخدمه
 const MENU_JSON_PATH = 'menu.json';
+const ADMIN_JSON_PATH = 'admin.json'; // المسار للملف الجديد
 const IMAGES_FOLDER = 'images/';
-
-/* ============ إعداد باسورد مخزن على شكل هاش SHA-256 ============
-   القيمة هنا تمثل hash('1234') بالـ SHA-256. لتغيير الباسورد:
-   احسب SHA-256 لكلمة جديدة (يمكنني أديك أداة لو حبيت) وغيّر القيمة.
-   current for '1234' hashed:
-*/
-const PASSWORD_HASH = '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4'; // sha256("1234")
 
 /* ================== عناصر DOM ================== */
 const adminBtn = document.getElementById('adminBtn');
 const passwordOverlay = document.getElementById('passwordOverlay');
 const adminOverlay = document.getElementById('adminOverlay');
+const editOverlay = document.getElementById('editOverlay');
 const pwSubmit = document.getElementById('pwSubmit');
 const pwCancel = document.getElementById('pwCancel');
 const pwInput = document.getElementById('pwInput');
 const uploadBtn = document.getElementById('uploadBtn');
 const closeAdminBtn = document.getElementById('closeAdminBtn');
 const tokenInput = document.getElementById('tokenInput');
+const logoutAdminBtn = document.getElementById('logoutAdminBtn'); // زر الخروج
+const newPwInput = document.getElementById('newPwInput');
+const changePwBtn = document.getElementById('changePwBtn');
 
 const nameInput = document.getElementById('nameInput');
 const priceInput = document.getElementById('priceInput');
@@ -153,14 +195,23 @@ const descInput = document.getElementById('descInput');
 const catInput = document.getElementById('catInput');
 const imgInput = document.getElementById('imgInput');
 
+const editIdInput = document.getElementById('editIdInput');
+const editCatInput = document.getElementById('editCatInput');
+const editNameInput = document.getElementById('editNameInput');
+const editPriceInput = document.getElementById('editPriceInput');
+const editDescInput = document.getElementById('editDescInput');
+const saveEditBtn = document.getElementById('saveEditBtn');
+const closeEditBtn = document.getElementById('closeEditBtn');
+
 const pagesArea = document.getElementById('pagesArea');
 const cover = document.getElementById('cover');
 const book = document.getElementById('book');
 const nextBtn = document.getElementById('nextBtn');
 const prevBtn = document.getElementById('prevBtn');
 
-let currentPageIndex = -1; // -1 means cover visible
+let currentPageIndex = 0; // الصفحة الحالية التي ننظر إليها (0 هي الصفحة الأولى)
 let pages = []; // array of category pages
+let isBookOpen = false;
 
 /* ========== مساعدة: حساب SHA-256 باستخدام Web Crypto ========= */
 async function sha256(text){
@@ -183,11 +234,22 @@ pwCancel.addEventListener('click', ()=> passwordOverlay.style.display = 'none');
 
 /* تحقق من الباسورد (مقارنة هاش) */
 pwSubmit.addEventListener('click', async ()=> {
+  const file = await githubGetFile(ADMIN_JSON_PATH);
+  if (!file) {
+    return alert('خطأ: ملف `admin.json` غير موجود في المستودع. يرجى إنشاؤه أولاً.');
+  }
+  const adminConfig = JSON.parse(base64ToUtf8(file.content.replace(/\n/g, '')));
+  const correctHash = adminConfig.passwordHash;
+
   const tryHash = await sha256((pwInput.value || '').trim());
   // --- سطر التشخيص: اطبع الهاش الذي تم حسابه والهاش الصحيح للمقارنة ---
-  console.log('الهاش الذي أدخلته:', tryHash, '\nالهاش الصحيح:', PASSWORD_HASH);
-  if(tryHash === PASSWORD_HASH){
+  console.log('الهاش الذي أدخلته:', tryHash, '\nالهاش الصحيح:', correctHash);
+
+  if(tryHash === correctHash){
+    pwInput.value = ''; // مسح حقل كلمة المرور
     passwordOverlay.style.display = 'none';
+    document.body.classList.add('admin-mode'); // تفعيل وضع المدير
+    alert('تم تسجيل الدخول بنجاح. أزرار التعديل والحذف ظاهرة الآن على الأصناف.');
     adminOverlay.style.display = 'flex';
     // ممكن أن نجلب التوكن من sessionStorage لو المستخدم دخله قبل كده
     tokenInput.value = sessionStorage.getItem('GHTOKEN') || '';
@@ -199,6 +261,22 @@ pwSubmit.addEventListener('click', async ()=> {
 /* إغلاق admin */
 closeAdminBtn.addEventListener('click', ()=> {
   adminOverlay.style.display = 'none';
+});
+
+/* الخروج من وضع المدير */
+logoutAdminBtn.addEventListener('click', ()=> {
+  adminOverlay.style.display = 'none';
+  document.body.classList.remove('admin-mode'); // إزالة وضع المدير
+  tokenInput.value = ''; // مسح التوكن من الحقل
+  newPwInput.value = ''; // مسح حقل كلمة المرور الجديدة
+  sessionStorage.removeItem('GHTOKEN'); // مسح التوكن من الـ sessionStorage
+  alert('تم تسجيل الخروج من وضع المدير.');
+  renderMenu(); // إعادة عرض المنيو لإخفاء أزرار التعديل/الحذف
+});
+
+/* إغلاق edit */
+closeEditBtn.addEventListener('click', ()=> {
+  editOverlay.style.display = 'none';
 });
 
 /* إظهار/إخفاء كلمة المرور */
@@ -262,6 +340,7 @@ async function loadMenuJson(){
 
 /* عرض المنيو: نقسم حسب الفئات */
 async function renderMenu(){
+  pagesArea.innerHTML = 'جاري تحميل المنيو...';
   const menu = await loadMenuJson();
   // group by category
   const cats = {};
@@ -298,9 +377,13 @@ async function renderMenu(){
           onerror="this.style.display='none'"
         >
         <div class="meta">
-          <div style="font-weight:700">${escapeHtml(it.name)}</div>
-          <div style="color:#888;font-size:13px">${escapeHtml(it.desc||'')}</div>
-          <div class="price">${escapeHtml(it.price)}</div>
+            <div class="item-name">${escapeHtml(it.name)}</div>
+            <div style="color:#888;font-size:13px">${escapeHtml(it.desc||'')}</div>
+            <div class="price">${escapeHtml(it.price)}</div>
+            <div class="card-admin-controls">
+                <button class="edit-btn" data-id="${escapeHtml(it.addedAt)}">تعديل</button>
+                <button class="delete-btn" data-id="${escapeHtml(it.addedAt)}">حذف</button>
+            </div>
         </div>
       `;
       grid.appendChild(card);
@@ -308,9 +391,11 @@ async function renderMenu(){
     pagesArea.appendChild(page);
     pages.push(page);
   }
+  // إضافة event listeners لأزرار التعديل والحذف الجديدة
+  addAdminActionListeners();
 
   // افتراضياً لو مفيش صفحات ابقِ الغلاف ظاهر فقط
-  currentPageIndex = -1;
+  currentPageIndex = 0;
   applyFlipState();
 }
 
@@ -319,40 +404,43 @@ function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>"']/g, c=>({ '&'
 
 /* تحكم بالصفحات (تقليب) */
 function applyFlipState(){
+  if (!isBookOpen) {
+    book.classList.remove('open');
+    return;
+  }
+  book.classList.add('open');
+
   const total = pages.length;
-  // currentPageIndex هو مؤشر آخر صفحة تم قلبها. -1 يعني الغلاف مغلق.
-  // 0 يعني الصفحة الأولى مقلوبة، ونرى ظهرها ووجه الصفحة الثانية.
   pages.forEach((page, i) => {
-    const isFlipped = i <= currentPageIndex;
-    const isCurrentVisiblePage = i === currentPageIndex + 1;
+    // الصفحة تُقلب إذا كان ترتيبها أقل من الصفحة الحالية المعروضة
+    const isFlipped = i < currentPageIndex;
+    const isCurrentVisiblePage = i === currentPageIndex;
 
     page.style.transform = isFlipped ? 'rotateY(-180deg)' : 'rotateY(0deg)';
     
     // z-index: الصفحات المقلوبة تأخذ ترتيب تصاعدي من الأسفل.
     // الصفحات غير المقلوبة تأخذ ترتيب تنازلي من الأعلى.
     page.style.zIndex = isFlipped ? i + 1 : total - i;
-
-    // الأهم: نمنع تداخل المحتوى ثلاثي الأبعاد
-    page.style.transformStyle = isCurrentVisiblePage ? 'preserve-3d' : 'flat';
   });
-  book.classList.toggle('open', currentPageIndex > -1); // افتح الكتاب لو أي صفحة مقلوبة
 }
 
 /* أزرار التالي / السابق */
 nextBtn.addEventListener('click', ()=> {
-  if(currentPageIndex < pages.length - 1) currentPageIndex++;
+  if (!isBookOpen || currentPageIndex >= pages.length -1) return;
+  currentPageIndex++;
   applyFlipState();
 });
 prevBtn.addEventListener('click', ()=> {
-  if(currentPageIndex > -1) currentPageIndex--;
+  if (!isBookOpen) return;
+  if(currentPageIndex > 0) currentPageIndex--;
+  else { // لو كنا في الصفحة الأولى ونضغط "سابق"، نغلق الكتاب
+    isBookOpen = false;
+  }
   applyFlipState();
 });
 cover.addEventListener('click', ()=> {
-  // اضغط الغلاف يفتحه للصفحة الأولى
-  if(pages.length>0){
-    currentPageIndex = 0;
-    applyFlipState();
-  }
+  isBookOpen = true;
+  applyFlipState();
 });
 
 /* ============== رفع صورة وحدث menu.json ============== */
@@ -418,6 +506,107 @@ async function uploadItem(){
   }
 }
 
+/* ================ تعديل وحذف الأصناف ================ */
+
+function addAdminActionListeners() {
+    document.querySelectorAll('.edit-btn').forEach(btn => {
+        btn.addEventListener('click', handleEditClick);
+    });
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', handleDeleteClick);
+    });
+}
+
+async function handleEditClick(event) {
+    const itemId = event.target.dataset.id;
+    const menu = await loadMenuJson();
+    const itemToEdit = menu.find(item => item.addedAt === itemId);
+
+    if (!itemToEdit) {
+        alert('لم يتم العثور على الصنف!');
+        return;
+    }
+
+    // ملء نافذة التعديل بالبيانات الحالية
+    editIdInput.value = itemToEdit.addedAt;
+    editCatInput.value = itemToEdit.category || '';
+    editNameInput.value = itemToEdit.name || '';
+    editPriceInput.value = itemToEdit.price || '';
+    editDescInput.value = itemToEdit.desc || '';
+
+    editOverlay.style.display = 'flex';
+}
+
+async function handleDeleteClick(event) {
+    const itemId = event.target.dataset.id;
+    if (!confirm('هل أنت متأكد من رغبتك في حذف هذا الصنف؟ لا يمكن التراجع عن هذا الإجراء.')) {
+        return;
+    }
+
+    const token = tokenInput.value.trim() || sessionStorage.getItem('GHTOKEN');
+    if (!token) {
+        return alert('مطلوب GitHub Token لإجراء الحذف. يرجى فتح لوحة التحكم وإدخاله.');
+    }
+    sessionStorage.setItem('GHTOKEN', token);
+
+    try {
+        const existingFile = await githubGetFile(MENU_JSON_PATH);
+        if (!existingFile) throw new Error('ملف المنيو غير موجود.');
+
+        let menu = JSON.parse(base64ToUtf8(existingFile.content.replace(/\n/g, '')));
+        const updatedMenu = menu.filter(item => item.addedAt !== itemId);
+
+        if (menu.length === updatedMenu.length) {
+            throw new Error('لم يتم العثور على الصنف المراد حذفه.');
+        }
+
+        const jsonString = JSON.stringify(updatedMenu, null, 2);
+        await githubPutFile(MENU_JSON_PATH, utf8ToBase64(jsonString), `Delete menu item ${itemId}`, existingFile.sha, token);
+
+        alert('✅ تم حذف الصنف بنجاح.');
+        await renderMenu();
+
+    } catch (err) {
+        console.error(err);
+        alert('حدث خطأ أثناء الحذف: ' + err.message);
+    }
+}
+
+saveEditBtn.addEventListener('click', async () => {
+    const itemId = editIdInput.value;
+    const token = tokenInput.value.trim() || sessionStorage.getItem('GHTOKEN');
+    if (!token) {
+        return alert('مطلوب GitHub Token لحفظ التعديلات. يرجى فتح لوحة التحكم وإدخاله.');
+    }
+    sessionStorage.setItem('GHTOKEN', token);
+
+    try {
+        const existingFile = await githubGetFile(MENU_JSON_PATH);
+        if (!existingFile) throw new Error('ملف المنيو غير موجود.');
+
+        let menu = JSON.parse(base64ToUtf8(existingFile.content.replace(/\n/g, '')));
+        const itemIndex = menu.findIndex(item => item.addedAt === itemId);
+        if (itemIndex === -1) throw new Error('لم يتم العثور على الصنف.');
+
+        // تحديث بيانات الصنف
+        menu[itemIndex].category = editCatInput.value.trim();
+        menu[itemIndex].name = editNameInput.value.trim();
+        menu[itemIndex].price = editPriceInput.value.trim();
+        menu[itemIndex].desc = editDescInput.value.trim();
+
+        const jsonString = JSON.stringify(menu, null, 2);
+        await githubPutFile(MENU_JSON_PATH, utf8ToBase64(jsonString), `Edit menu item ${menu[itemIndex].name}`, existingFile.sha, token);
+
+        alert('✅ تم حفظ التعديلات بنجاح.');
+        editOverlay.style.display = 'none';
+        await renderMenu();
+
+    } catch (err) {
+        console.error(err);
+        alert('حدث خطأ أثناء حفظ التعديلات: ' + err.message);
+    }
+});
+
 /* تحويل نص UTF-8 إلى Base64 (الطريقة الحديثة) */
 function utf8ToBase64(str) {
   const encoder = new TextEncoder();
@@ -466,6 +655,38 @@ function makeSafeFilename(name){
 
 /* ================ تهيئة العرض عند التحميل ================ */
 renderMenu();
+
+/* ================ تغيير كلمة المرور ================ */
+changePwBtn.addEventListener('click', async () => {
+  const newPassword = newPwInput.value.trim();
+  if (newPassword.length < 4) {
+    return alert('يجب أن تكون كلمة المرور 4 أحرف على الأقل.');
+  }
+
+  const token = tokenInput.value.trim() || sessionStorage.getItem('GHTOKEN');
+  if (!token) {
+    return alert('مطلوب GitHub Token لتغيير كلمة المرور.');
+  }
+
+  if (!confirm('هل أنت متأكد من رغبتك في تغيير كلمة المرور؟')) {
+    return;
+  }
+
+  try {
+    const newHash = await sha256(newPassword);
+    const file = await githubGetFile(ADMIN_JSON_PATH);
+    if (!file) throw new Error('ملف `admin.json` غير موجود.');
+
+    const newContent = JSON.stringify({ passwordHash: newHash }, null, 2);
+    await githubPutFile(ADMIN_JSON_PATH, utf8ToBase64(newContent), 'Update password', file.sha, token);
+
+    alert('✅ تم تحديث كلمة المرور بنجاح.');
+    newPwInput.value = '';
+  } catch (err) {
+    console.error(err);
+    alert('حدث خطأ أثناء تحديث كلمة المرور: ' + err.message);
+  }
+});
 
 /* ================ أحداث رفع ================ */
 uploadBtn.addEventListener('click', uploadItem);
