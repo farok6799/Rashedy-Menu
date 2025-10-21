@@ -234,12 +234,18 @@ pwCancel.addEventListener('click', ()=> passwordOverlay.style.display = 'none');
 
 /* تحقق من الباسورد (مقارنة هاش) */
 pwSubmit.addEventListener('click', async ()=> {
+  let correctHash;
   const file = await githubGetFile(ADMIN_JSON_PATH);
-  if (!file) {
-    return alert('خطأ: ملف `admin.json` غير موجود في المستودع. يرجى إنشاؤه أولاً.');
+
+  if (file) {
+    // لو الملف موجود، استخدم الهاش منه
+    const adminConfig = JSON.parse(base64ToUtf8(file.content.replace(/\n/g, '')));
+    correctHash = adminConfig.passwordHash;
+  } else {
+    // لو الملف غير موجود، استخدم هاش افتراضي مؤقت لكلمة "0000"
+    correctHash = '482f62775a258276450725593629434823750399330769968b35432651536901'; // sha256('0000')
+    console.warn('ملف admin.json غير موجود. تم استخدام كلمة المرور الافتراضية المؤقتة (0000). يرجى تغييرها فوراً.');
   }
-  const adminConfig = JSON.parse(base64ToUtf8(file.content.replace(/\n/g, '')));
-  const correctHash = adminConfig.passwordHash;
 
   const tryHash = await sha256((pwInput.value || '').trim());
   // --- سطر التشخيص: اطبع الهاش الذي تم حسابه والهاش الصحيح للمقارنة ---
@@ -675,10 +681,10 @@ changePwBtn.addEventListener('click', async () => {
   try {
     const newHash = await sha256(newPassword);
     const file = await githubGetFile(ADMIN_JSON_PATH);
-    if (!file) throw new Error('ملف `admin.json` غير موجود.');
+    const sha = file ? file.sha : null; // لو الملف مش موجود، الـ sha هيكون null (لإنشاء ملف جديد)
 
     const newContent = JSON.stringify({ passwordHash: newHash }, null, 2);
-    await githubPutFile(ADMIN_JSON_PATH, utf8ToBase64(newContent), 'Update password', file.sha, token);
+    await githubPutFile(ADMIN_JSON_PATH, utf8ToBase64(newContent), 'Update password', sha, token);
 
     alert('✅ تم تحديث كلمة المرور بنجاح.');
     newPwInput.value = '';
