@@ -126,6 +126,7 @@
         <button class="btn" id="uploadBtn">إضافة ورفع</button>
         <button class="btn danger" id="closeAdminBtn">إلغاء</button>
         <!-- زر الخروج من وضع المدير -->
+        <button class="btn" id="changePwBtn" style="background:#334;" title="تغيير كلمة المرور">🔑</button>
         <button class="btn" id="logoutAdminBtn" style="background:#555;">خروج</button>
 
       </div>
@@ -161,6 +162,31 @@
     </div>
   </div>
 
+  <!-- Overlay: change password -->
+  <div class="overlay" id="changePwOverlay">
+    <div class="panel">
+      <h3>تغيير كلمة المرور</h3>
+      <div class="small">لتأمين حسابك، سنرسل رمز تحقق إلى حسابك في تيليجرام.</div>
+      
+      <div class="flex-gap">
+        <button class="btn" id="sendCodeBtn">إرسال رمز التحقق</button>
+        <div id="sendCodeSpinner" class="spinner"></div>
+      </div>
+
+      <label for="verificationCodeInput">رمز التحقق</label>
+      <input id="verificationCodeInput" placeholder="أدخل الرمز من تيليجرام">
+
+      <label for="newPasswordInput">كلمة المرور الجديدة</label>
+      <input type="password" id="newPasswordInput" placeholder="أدخل كلمة المرور الجديدة">
+
+      <div class="flex-gap">
+        <button class="btn" id="updatePasswordBtn">تحديث كلمة المرور</button>
+        <div id="updatePwSpinner" class="spinner"></div>
+        <button class="btn danger" id="closeChangePwBtn">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
 <script>
 /* ================== إعدادات ريبّو ================== */
 const GITHUB_OWNER = 'farok6799';
@@ -188,13 +214,22 @@ const uploadBtn = document.getElementById('uploadBtn');
 const closeAdminBtn = document.getElementById('closeAdminBtn');
 const tokenInput = document.getElementById('tokenInput');
 const logoutAdminBtn = document.getElementById('logoutAdminBtn'); // زر الخروج
+const changePwBtn = document.getElementById('changePwBtn');
+
+const changePwOverlay = document.getElementById('changePwOverlay');
+const sendCodeBtn = document.getElementById('sendCodeBtn');
+const sendCodeSpinner = document.getElementById('sendCodeSpinner');
+const verificationCodeInput = document.getElementById('verificationCodeInput');
+const newPasswordInput = document.getElementById('newPasswordInput');
+const updatePasswordBtn = document.getElementById('updatePasswordBtn');
+const updatePwSpinner = document.getElementById('updatePwSpinner');
+const closeChangePwBtn = document.getElementById('closeChangePwBtn');
 
 const nameInput = document.getElementById('nameInput');
 const priceInput = document.getElementById('priceInput');
 const descInput = document.getElementById('descInput');
 const catInput = document.getElementById('catInput');
 const imgInput = document.getElementById('imgInput');
-
 const editIdInput = document.getElementById('editIdInput');
 const editCatInput = document.getElementById('editCatInput');
 const editNameInput = document.getElementById('editNameInput');
@@ -264,6 +299,15 @@ logoutAdminBtn.addEventListener('click', ()=> {
   renderMenu(); // إعادة عرض المنيو لإخفاء أزرار التعديل/الحذف
 });
 
+/* فتح وإغلاق لوحة تغيير كلمة المرور */
+changePwBtn.addEventListener('click', () => {
+  changePwOverlay.style.display = 'flex';
+});
+closeChangePwBtn.addEventListener('click', () => {
+  changePwOverlay.style.display = 'none';
+});
+
+
 /* إغلاق edit */
 closeEditBtn.addEventListener('click', ()=> {
   editOverlay.style.display = 'none';
@@ -278,6 +322,111 @@ pwToggle.addEventListener('click', () => {
 });
 
 /* ================= GitHub API helpers ================= */
+
+/* تشغيل GitHub Action (workflow_dispatch) */
+async function triggerWorkflow(workflowFileName, inputs) {
+    const token = getAuthToken();
+    if (!token) {
+        throw new Error('مطلوب GitHub Token لتشغيل GitHub Action.');
+    }
+
+    const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/actions/workflows/${workflowFileName}/dispatches`;
+
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            ref: GITHUB_BRANCH,
+            inputs: inputs
+        })
+    });
+
+    if (res.status !== 204) { // 204 No Content is the expected success status
+        const t = await res.text();
+        throw new Error(`خطأ في تشغيل الـ Action: ${res.status} - ${t}`);
+    }
+}
+
+/* ================== منطق تغيير كلمة المرور ================== */
+
+function generateRandomCode(length = 10) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+}
+
+sendCodeBtn.addEventListener('click', async () => {
+    sendCodeBtn.disabled = true;
+    sendCodeSpinner.style.display = 'block';
+    try {
+        const code = generateRandomCode(10);
+        // تخزين الرمز مؤقتًا في sessionStorage مع تاريخ انتهاء صلاحية (5 دقائق)
+        const expiry = Date.now() + 5 * 60 * 1000;
+        sessionStorage.setItem('verificationCode', JSON.stringify({ code, expiry }));
+
+        await triggerWorkflow('send-telegram-code.yml', { verification_code: code });
+        alert('✅ تم إرسال رمز التحقق إلى حسابك في تيليجرام. يرجى التحقق من رسائلك.');
+    } catch (err) {
+        console.error(err);
+        alert('حدث خطأ أثناء إرسال الرمز: ' + err.message);
+    } finally {
+        sendCodeBtn.disabled = false;
+        sendCodeSpinner.style.display = 'none';
+    }
+});
+
+updatePasswordBtn.addEventListener('click', async () => {
+    const storedData = JSON.parse(sessionStorage.getItem('verificationCode') || '{}');
+    const enteredCode = verificationCodeInput.value.trim();
+    const newPassword = newPasswordInput.value.trim();
+
+    if (!enteredCode || !newPassword) return alert('يرجى إدخال رمز التحقق وكلمة المرور الجديدة.');
+    if (!storedData.code || Date.now() > storedData.expiry) return alert('رمز التحقق غير صالح أو انتهت صلاحيته. يرجى طلب رمز جديد.');
+    if (enteredCode !== storedData.code) return alert('رمز التحقق غير صحيح.');
+
+    updatePasswordBtn.disabled = true;
+    updatePwSpinner.style.display = 'block';
+
+    try {
+        const newHash = await sha256(newPassword);
+        const token = getAuthToken();
+        if (!token) throw new Error('مطلوب GitHub Token لتحديث الملف.');
+
+        // 1. جلب الملف الحالي
+        const fileData = await githubGetFile('index.html');
+        if (!fileData) throw new Error('لا يمكن قراءة ملف index.html من المستودع.');
+
+        // 2. فك تشفير المحتوى وتحديث الهاش
+        let fileContent = base64ToUtf8(fileData.content);
+        const hashRegex = /(const PASSWORD_HASH = ')([^']+)(';)/;
+        if (!hashRegex.test(fileContent)) {
+            throw new Error('لم يتم العثور على متغير PASSWORD_HASH في الكود. تأكد من أنه بنفس الصيغة.');
+        }
+        fileContent = fileContent.replace(hashRegex, `$1${newHash}$3`);
+
+        // 3. إعادة تشفير المحتوى ورفعه
+        const newBase64Content = utf8ToBase64(fileContent);
+        await githubPutFile('index.html', newBase64Content, 'chore: update password hash', fileData.sha, token);
+
+        alert('✅ تم تحديث كلمة المرور بنجاح! سيتم إعادة تحميل الصفحة الآن.');
+        sessionStorage.removeItem('verificationCode');
+        window.location.reload();
+
+    } catch (err) {
+        console.error(err);
+        alert('حدث خطأ فادح أثناء تحديث كلمة المرور: ' + err.message);
+    } finally {
+        updatePasswordBtn.disabled = false;
+        updatePwSpinner.style.display = 'none';
+    }
+});
 
 /* قراءة ملف من GitHub (محتوى base64 + sha) */
 async function githubGetFile(path){
@@ -433,6 +582,12 @@ cover.addEventListener('click', ()=> {
   applyFlipState();
 });
 
+/* ================= Helper Functions ================= */
+function getAuthToken() {
+    const token = tokenInput.value.trim() || sessionStorage.getItem('GHTOKEN');
+    if (token) sessionStorage.setItem('GHTOKEN', token);
+    return token;
+}
 /* ============== رفع صورة وحدث menu.json ============== */
 async function uploadItem(){
   const name = nameInput.value.trim();
@@ -440,19 +595,16 @@ async function uploadItem(){
   const desc = descInput.value.trim();
   const category = (catInput.value.trim() || 'غير مصنف');
   const file = imgInput.files[0];
-  const token = tokenInput.value.trim() || sessionStorage.getItem('GHTOKEN');
+  const token = getAuthToken();
 
   if(!name || !price || !file){
     return alert('من فضلك اكمل الاسم والسعر واختر صورة.');
   }
   if(!token){
-    return alert('احتاج GitHub Token عشان ارفع الصورة واحدّث menu.json. ضعه في الحقل أو سجّل الدخول مؤقتًا.');
+    return alert('مطلوب GitHub Token لرفع البيانات. يرجى إدخاله في لوحة التحكم.');
   }
 
   try{
-    // حفظ التوكن مؤقتاً في sessionStorage (مريح أثناء الجلسة)
-    sessionStorage.setItem('GHTOKEN', token);
-
     // 1) نرفع الصورة إلى images/<filename>
     const filename = makeSafeFilename(file.name);
     const targetPath = IMAGES_FOLDER + filename;
@@ -533,12 +685,11 @@ async function handleDeleteClick(event) {
         return;
     }
 
-    const token = tokenInput.value.trim() || sessionStorage.getItem('GHTOKEN');
+    const token = getAuthToken();
     if (!token) {
         return alert('مطلوب GitHub Token لإجراء الحذف. يرجى فتح لوحة التحكم وإدخاله.');
     }
-    sessionStorage.setItem('GHTOKEN', token);
-
+    
     try {
         const existingFile = await githubGetFile(MENU_JSON_PATH);
         if (!existingFile) throw new Error('ملف المنيو غير موجود.');
@@ -564,12 +715,11 @@ async function handleDeleteClick(event) {
 
 saveEditBtn.addEventListener('click', async () => {
     const itemId = editIdInput.value;
-    const token = tokenInput.value.trim() || sessionStorage.getItem('GHTOKEN');
+    const token = getAuthToken();
     if (!token) {
         return alert('مطلوب GitHub Token لحفظ التعديلات. يرجى فتح لوحة التحكم وإدخاله.');
     }
-    sessionStorage.setItem('GHTOKEN', token);
-
+    
     try {
         const existingFile = await githubGetFile(MENU_JSON_PATH);
         if (!existingFile) throw new Error('ملف المنيو غير موجود.');
