@@ -19,17 +19,51 @@
   .bookScene{perspective:2000px;width:100%;height:560px;display:flex;align-items:center;justify-content:center}
   .book{width:760px;height:520px;position:relative;transform-style:preserve-3d}
   .cover{
-    position:absolute;width:100%;height:100%;left:0;top:0;border-radius:12px;background:linear-gradient(135deg,#141414,#2b2b2b);display:flex;align-items:center;justify-content:center;z-index:10;
-    color:var(--accent);font-weight:800;font-size:44px;cursor:pointer;box-shadow:0 40px 80px rgba(0,0,0,0.7);
+    position:absolute;width:100%;height:100%;left:0;top:0;
+    cursor:pointer;box-shadow:0 40px 80px rgba(0,0,0,0.7);
     transform-origin:left;transition:transform 1s cubic-bezier(.22,.9,.32,1);
+    transform-style: preserve-3d;
+    z-index: 10;
+  }
+  .cover-front, .cover-back {
+    position: absolute;
+    width: 100%; height: 100%;
+    backface-visibility: hidden;
+    border-radius: 12px;
+  }
+  .cover-front {
+    background: linear-gradient(135deg,#141414,#2b2b2b);
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    padding: 40px; /* إضافة مساحة حول الشعار */
+  }
+  .cover-front img {
+    max-width: 100%; max-height: 100%; object-fit: contain; /* للحفاظ على أبعاد الشعار */
+  }
+  .cover-back {
+    background: #1f1f1f; transform: rotateY(180deg);
   }
   /* عند فتح الكتاب، الغلاف يختفي للخلف */
-  .book.open .cover{transform:rotateY(-180deg); z-index: -1;}
-  .pages{position:absolute;inset:0;border-radius:12px;background:#fbf8f3;color:#111;box-shadow:inset 0 6px 30px rgba(0,0,0,0.25);overflow:hidden;transform-style:preserve-3d}
-  .page{position:absolute;inset:0;backface-visibility:hidden;transform-origin:left;transition:transform 900ms cubic-bezier(.22,.9,.32,1), z-index 0s 450ms;transform-style:preserve-3d}
+  .book.open .cover{transform:rotateY(-180deg); z-index: 0;}
+
+  .back-cover {
+    position: absolute;
+    width: 100%; height: 100%;
+    left: 0; top: 0;
+    background: linear-gradient(135deg,#141414,#2b2b2b);
+    border-radius: 12px;
+    z-index: -1; /* يكون في الخلف دائمًا */
+  }
+
+  .page{position:absolute;top:0;left:0;width:100%;height:100%;backface-visibility:hidden;transform-origin:left;transition:transform 900ms cubic-bezier(.22,.9,.32,1);transform-style:preserve-3d; border-radius: 12px;}
   .page-front, .page-back {position:absolute;inset:0;padding:28px;backface-visibility:hidden;display:flex;flex-direction:column}
-  .page-front{background:#fdfcf9;} /* الوجه الأمامي الذي يحمل المحتوى */
-  .page-back{background:#fbf8f3;transform:rotateY(180deg)} /* الوجه الخلفي الفارغ */
+  .page-front{background:#fdfcf9; box-shadow: inset 7px 0 15px -7px rgba(0,0,0,0.3);} /* ظل داخلي على الحافة اليسرى */
+  .page-back{background:#fbf8f3;transform:rotateY(180deg); box-shadow: inset 7px 0 15px -7px rgba(0,0,0,0.3);} /* ظل داخلي على الحافة اليمنى (بعد الدوران) */
+  .page.dragging {
+    transition: none; /* إلغاء الانتقال أثناء السحب للحصول على استجابة فورية */
+    cursor: grabbing;
+  }
   .page h2{margin:0 0 8px 0;color:#c9a36b; position: relative; z-index: 1;} /* z-index to ensure title is above grid */
   .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:10px}
   .card{background:rgba(0,0,0,0.03);padding:10px;border-radius:10px;display:flex;gap:10px;align-items:center}
@@ -42,7 +76,7 @@
   body.admin-mode .card-admin-controls{display:flex;}
   .card-admin-controls button{font-size:12px; padding:4px 8px; border-radius:6px; cursor:pointer; border:0; background:rgba(0,0,0,0.08);}
   .card-admin-controls .delete-btn{background:#ff4d4d;color:#fff}
-  .btn{background:rgba(255,255,255,0.06);border:0;padding:10px 12px;border-radius:8px;color:var(--muted);cursor:pointer}
+  .btn{background:rgba(255,255,255,0.06);border:0;padding:10px 12px;border-radius:8px;color:var(--muted);cursor:pointer; user-select: none;}
   /* popup styles */
   .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;z-index:9999}
   .panel{background:#161616;padding:18px;border-radius:12px;width:360px;box-shadow:0 20px 60px rgba(0,0,0,0.8)}
@@ -51,13 +85,14 @@
   .small{font-size:13px;color:#aaa;margin-top:8px}
   .danger{background:#ff4d4d;color:#111}
   footer.small{margin-top:10px;color:#888;font-size:12px}
+  .controls { display: none; } /* إخفاء أزرار التحكم القديمة */
   @media (max-width:880px){ .book{width:92vw;height:62vh} .grid{grid-template-columns:1fr} .card img{width:90px;height:70px} .panel{width:92vw} }
   /* Helper classes */
   .pos-relative{position:relative}
   .flex-gap{display:flex;gap:8px;margin-top:12px}
-  .item-name{font-weight:700}
+  .item-name{font-weight:700; color: #333;}
   #pwToggle{position:absolute;left:10px;top:50%;transform:translateY(-50%);cursor:pointer;user-select:none;}
-</style>
+  .spinner { border: 3px solid rgba(255,255,255,0.2); border-top-color: var(--accent); border-radius: 50%; width: 18px; height: 18px; animation: spin 1s linear infinite; display:none; margin: 0 8px; } @keyframes spin { to { transform: rotate(360deg); } }</style>
 </head>
 <body>
   <div class="container">
@@ -68,10 +103,12 @@
 
     <div class="bookScene">
       <div class="book" id="book">
-        <div class="cover" id="cover">أسماك الرشيدي</div>
-        <div class="pages" id="pagesArea">
-          <!-- صفحات ديناميكيًا -->
+        <div class="cover" id="cover">
+          <div class="cover-front"><img src="images/logo.png" alt="شعار أسماك الرشيدي" /></div>
+          <div class="cover-back"></div>
         </div>
+        <div class="back-cover"></div>
+        <!-- الصفحات ستضاف هنا مباشرة بواسطة JavaScript -->
       </div>
     </div>
 
@@ -95,6 +132,7 @@
         <button class="btn" id="pwCancel">إلغاء</button>
       </div>
       <hr style="margin-top:12px;border:none;border-top:1px solid rgba(255,255,255,0.04)">
+      <button class="btn" id="forgotPwBtn" style="width:100%; background:transparent; color:#aaa; font-size:13px;">نسيت كلمة المرور؟</button>
       <div class="small">لو نجحت ستستطيع رفع صور وصنف جديد. ستطلب الصفحة بعد ذلك الـ GitHub Token (مرة واحدة).</div>
     </div>
   </div>
@@ -187,6 +225,37 @@
     </div>
   </div>
 
+  <!-- Overlay: forgot password -->
+  <div class="overlay" id="forgotPwOverlay">
+    <div class="panel">
+      <h3>إعادة تعيين كلمة المرور</h3>
+      <div class="small">لإعادة التعيين، يجب إدخال GitHub Token الخاص بك لإثبات الملكية، ثم طلب رمز تحقق سيصلك على تيليجرام.</div>
+
+      <label>GitHub Personal Access Token</label>
+      <input id="forgotPwTokenInput" placeholder="ghp_xxx...">
+
+      <div class="flex-gap">
+        <button class="btn" id="forgotPwSendCodeBtn">إرسال رمز التحقق</button>
+        <div id="forgotPwSendCodeSpinner" class="spinner"></div>
+      </div>
+
+      <label>رمز التحقق</label>
+      <input id="forgotPwVerificationCodeInput" placeholder="أدخل الرمز من تيليجرام">
+
+      <label>كلمة المرور الجديدة</label>
+      <input type="password" id="forgotPwNewPasswordInput" placeholder="أدخل كلمة المرور الجديدة">
+
+      <div class="flex-gap">
+        <button class="btn" id="resetPasswordBtn">إعادة تعيين</button>
+        <div id="resetPwSpinner" class="spinner"></div>
+        <button class="btn danger" id="closeForgotPwBtn">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- عنصر الصوت لقلب الصفحات -->
+  <audio id="flipSound" src="audio/page-flip.mp3" preload="auto"></audio>
+
 <script>
 /* ================== إعدادات ريبّو ================== */
 const GITHUB_OWNER = 'farok6799';
@@ -200,7 +269,7 @@ const IMAGES_FOLDER = 'images/';
    احسب SHA-256 لكلمة جديدة (يمكنني أديك أداة لو حبيت) وغيّر القيمة.
    current for '1234' hashed:
 */
-const PASSWORD_HASH = '7f41cb340e3b6420e8274fe3e82df0dd965e4428a583299688d6d125cd1c6be3'; // sha256("1234")
+const PASSWORD_HASH = '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4'; // sha256("1234")
 
 /* ================== عناصر DOM ================== */
 const adminBtn = document.getElementById('adminBtn');
@@ -210,6 +279,7 @@ const editOverlay = document.getElementById('editOverlay');
 const pwSubmit = document.getElementById('pwSubmit');
 const pwCancel = document.getElementById('pwCancel');
 const pwInput = document.getElementById('pwInput');
+const forgotPwBtn = document.getElementById('forgotPwBtn');
 const uploadBtn = document.getElementById('uploadBtn');
 const closeAdminBtn = document.getElementById('closeAdminBtn');
 const tokenInput = document.getElementById('tokenInput');
@@ -225,6 +295,16 @@ const updatePasswordBtn = document.getElementById('updatePasswordBtn');
 const updatePwSpinner = document.getElementById('updatePwSpinner');
 const closeChangePwBtn = document.getElementById('closeChangePwBtn');
 
+const forgotPwOverlay = document.getElementById('forgotPwOverlay');
+const forgotPwTokenInput = document.getElementById('forgotPwTokenInput');
+const forgotPwSendCodeBtn = document.getElementById('forgotPwSendCodeBtn');
+const forgotPwSendCodeSpinner = document.getElementById('forgotPwSendCodeSpinner');
+const forgotPwVerificationCodeInput = document.getElementById('forgotPwVerificationCodeInput');
+const forgotPwNewPasswordInput = document.getElementById('forgotPwNewPasswordInput');
+const resetPasswordBtn = document.getElementById('resetPasswordBtn');
+const resetPwSpinner = document.getElementById('resetPwSpinner');
+const closeForgotPwBtn = document.getElementById('closeForgotPwBtn');
+
 const nameInput = document.getElementById('nameInput');
 const priceInput = document.getElementById('priceInput');
 const descInput = document.getElementById('descInput');
@@ -238,15 +318,33 @@ const editDescInput = document.getElementById('editDescInput');
 const saveEditBtn = document.getElementById('saveEditBtn');
 const closeEditBtn = document.getElementById('closeEditBtn');
 
-const pagesArea = document.getElementById('pagesArea');
+const bookElement = document.getElementById('book'); // تم التغيير من pagesArea إلى book
 const cover = document.getElementById('cover');
 const book = document.getElementById('book');
 const nextBtn = document.getElementById('nextBtn');
 const prevBtn = document.getElementById('prevBtn');
+const flipSound = document.getElementById('flipSound');
+let hasSingleLastPage = false; // متغير لتتبع إذا كانت الصفحة الأخيرة فردية
 
 let currentPageIndex = 0; // الصفحة الحالية التي ننظر إليها (0 هي الصفحة الأولى)
 let pages = []; // array of category pages
 let isBookOpen = false;
+let isDragging = false;
+let dragStartPos = 0;
+let draggedPage = null;
+let dragDirection = '';
+
+/* ========== تشغيل صوت قلب الصفحة ========== */
+function playFlipSound() {
+    if (flipSound) {
+        flipSound.currentTime = 0; // إعادة الصوت للبداية للسماح بالتشغيل المتكرر
+        flipSound.play().catch(error => {
+            // يتجاهل الخطأ إذا منع المتصفح التشغيل التلقائي قبل تفاعل المستخدم
+            // console.log("Playback prevented until user interaction: ", error);
+        });
+    }
+}
+
 
 /* ========== مساعدة: حساب SHA-256 باستخدام Web Crypto ========= */
 async function sha256(text){
@@ -266,6 +364,15 @@ adminBtn.addEventListener('click', ()=> {
   passwordOverlay.style.display = 'flex';
 });
 pwCancel.addEventListener('click', ()=> passwordOverlay.style.display = 'none');
+
+/* فتح وإغلاق لوحة "نسيت كلمة المرور" */
+forgotPwBtn.addEventListener('click', () => {
+  passwordOverlay.style.display = 'none';
+  forgotPwOverlay.style.display = 'flex';
+});
+closeForgotPwBtn.addEventListener('click', () => {
+  forgotPwOverlay.style.display = 'none';
+});
 
 /* تحقق من الباسورد (مقارنة هاش) */
 pwSubmit.addEventListener('click', async ()=> {
@@ -324,12 +431,12 @@ pwToggle.addEventListener('click', () => {
 /* ================= GitHub API helpers ================= */
 
 /* تشغيل GitHub Action (workflow_dispatch) */
-async function triggerWorkflow(workflowFileName, inputs) {
-    const token = getAuthToken();
+async function triggerWorkflow(workflowFileName, inputs, tokenOverride = null) {
+    const token = tokenOverride || getAuthToken();
     if (!token) {
-        throw new Error('مطلوب GitHub Token لتشغيل GitHub Action.');
+        throw new Error('مطلوب GitHub Token لتشغيل هذه العملية.');
     }
-
+    
     const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/actions/workflows/${workflowFileName}/dispatches`;
 
     const res = await fetch(url, {
@@ -385,6 +492,71 @@ sendCodeBtn.addEventListener('click', async () => {
     }
 });
 
+/* منطق "نسيت كلمة المرور" */
+forgotPwSendCodeBtn.addEventListener('click', async () => {
+    const token = forgotPwTokenInput.value.trim();
+    if (!token) {
+        return alert('يرجى إدخال GitHub Token أولاً.');
+    }
+
+    forgotPwSendCodeBtn.disabled = true;
+    forgotPwSendCodeSpinner.style.display = 'block';
+    try {
+        const code = generateRandomCode(10);
+        const expiry = Date.now() + 5 * 60 * 1000;
+        sessionStorage.setItem('verificationCode', JSON.stringify({ code, expiry }));
+
+        await triggerWorkflow('send-telegram-code.yml', { verification_code: code }, token);
+        alert('✅ تم إرسال رمز التحقق إلى حسابك في تيليجرام.');
+    } catch (err) {
+        console.error(err);
+        alert('حدث خطأ أثناء إرسال الرمز: ' + err.message);
+    } finally {
+        forgotPwSendCodeBtn.disabled = false;
+        forgotPwSendCodeSpinner.style.display = 'none';
+    }
+});
+
+resetPasswordBtn.addEventListener('click', async () => {
+    const token = forgotPwTokenInput.value.trim();
+    const storedData = JSON.parse(sessionStorage.getItem('verificationCode') || '{}');
+    const enteredCode = forgotPwVerificationCodeInput.value.trim();
+    const newPassword = forgotPwNewPasswordInput.value.trim();
+
+    if (!token || !enteredCode || !newPassword) return alert('يرجى إكمال جميع الحقول: التوكن، الرمز، وكلمة المرور الجديدة.');
+    if (!storedData.code || Date.now() > storedData.expiry) return alert('رمز التحقق غير صالح أو انتهت صلاحيته. اطلب رمزًا جديدًا.');
+    if (enteredCode !== storedData.code) return alert('رمز التحقق غير صحيح.');
+
+    resetPasswordBtn.disabled = true;
+    resetPwSpinner.style.display = 'block';
+
+    try {
+        const newHash = await sha256(newPassword);
+
+        const fileData = await githubGetFile('index.html', token);
+        if (!fileData) throw new Error('لا يمكن قراءة ملف index.html من المستودع.');
+
+        let fileContent = base64ToUtf8(fileData.content);
+        const hashRegex = /(const PASSWORD_HASH = ')([^']+)(';)/;
+        if (!hashRegex.test(fileContent)) throw new Error('لم يتم العثور على متغير PASSWORD_HASH في الكود.');
+        fileContent = fileContent.replace(hashRegex, `$1${newHash}$3`);
+
+        const newBase64Content = utf8ToBase64(fileContent);
+        await githubPutFile('index.html', newBase64Content, 'chore: reset password via forgot password flow', fileData.sha, token);
+
+        alert('✅ تم إعادة تعيين كلمة المرور بنجاح! سيتم إعادة تحميل الصفحة.');
+        sessionStorage.removeItem('verificationCode');
+        window.location.reload();
+
+    } catch (err) {
+        console.error(err);
+        alert('حدث خطأ فادح أثناء إعادة تعيين كلمة المرور: ' + err.message);
+    } finally {
+        resetPasswordBtn.disabled = false;
+        resetPwSpinner.style.display = 'none';
+    }
+});
+
 updatePasswordBtn.addEventListener('click', async () => {
     const storedData = JSON.parse(sessionStorage.getItem('verificationCode') || '{}');
     const enteredCode = verificationCodeInput.value.trim();
@@ -432,8 +604,14 @@ updatePasswordBtn.addEventListener('click', async () => {
 });
 
 /* قراءة ملف من GitHub (محتوى base64 + sha) */
-async function githubGetFile(path){
+async function githubGetFile(path, tokenOverride = null){
   const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${encodeURIComponent(path)}?ref=${GITHUB_BRANCH}`;
+  const headers = {};
+  // إذا تم توفير توكن، نستخدمه. هذا ضروري للوصول للمستودعات الخاصة.
+  const token = tokenOverride || getAuthToken();
+  if (token) {
+      headers['Authorization'] = 'token ' + token;
+  }
   const res = await fetch(url);
   if(res.status === 200){
     const data = await res.json();
@@ -480,58 +658,66 @@ async function loadMenuJson(){
   }
 }
 
+function createPageSideContent(category, items) {
+    let gridHtml = '';
+    for (const it of items) {
+        const imgUrl = it.image || '';
+        gridHtml += `
+            <div class="card">
+                <img 
+                    src="${imgUrl}" 
+                    alt="${escapeHtml(it.name)}" 
+                    loading="lazy" 
+                    onerror="this.style.display='none'"
+                >
+                <div class="meta">
+                    <div class="item-name">${escapeHtml(it.name)}</div>
+                    <div style="color:#888;font-size:13px">${escapeHtml(it.desc||'')}</div>
+                    <div class="price">${escapeHtml(it.price)}</div>
+                    <div class="card-admin-controls">
+                        <button class="edit-btn" data-id="${escapeHtml(it.addedAt)}">تعديل</button>
+                        <button class="delete-btn" data-id="${escapeHtml(it.addedAt)}">حذف</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    return `
+        <h2>${escapeHtml(category)}</h2>
+        <div class="grid">${gridHtml}</div>
+    `;
+}
+
 /* عرض المنيو: نقسم حسب الفئات */
 async function renderMenu(){
-  pagesArea.innerHTML = 'جاري تحميل المنيو...';
-  const menu = await loadMenuJson();
-  // group by category
-  const cats = {};
-  for(const it of menu){
-    const c = it.category || 'غير مصنف';
-    if(!cats[c]) cats[c] = [];
-    cats[c].push(it);
-  }
-
-  // بناء الواجهه: كل فئة صفحة
-  pagesArea.innerHTML = '';
+  // إزالة الصفحات القديمة قبل إعادة البناء
+  bookElement.querySelectorAll('.page').forEach(p => p.remove());
   pages = [];
-  for(const [cat, items] of Object.entries(cats)){
-    const page = document.createElement('div');
-    page.className = 'page'; // لا تضع padding هنا
-    // إنشاء وجهين للصفحة
-    page.innerHTML = `
-      <div class="page-front">
-        <h2>${escapeHtml(cat)}</h2>
-        <div class="grid"></div>
-      </div>
-      <div class="page-back"></div>
-    `;
-    const grid = page.querySelector('.page-front .grid');
-    for(const it of items){
-      const card = document.createElement('div');
-      card.className = 'card';
-      const imgUrl = it.image || '';
-      card.innerHTML = `
-        <img 
-          src="${imgUrl}" 
-          alt="${escapeHtml(it.name)}" 
-          loading="lazy" 
-          onerror="this.style.display='none'"
-        >
-        <div class="meta">
-            <div class="item-name">${escapeHtml(it.name)}</div>
-            <div style="color:#888;font-size:13px">${escapeHtml(it.desc||'')}</div>
-            <div class="price">${escapeHtml(it.price)}</div>
-            <div class="card-admin-controls">
-                <button class="edit-btn" data-id="${escapeHtml(it.addedAt)}">تعديل</button>
-                <button class="delete-btn" data-id="${escapeHtml(it.addedAt)}">حذف</button>
-            </div>
-        </div>
-      `;
-      grid.appendChild(card);
-    }
-    pagesArea.appendChild(page);
-    pages.push(page);
+
+  const menu = await loadMenuJson();
+  
+  const categories = menu.reduce((acc, item) => {
+      const category = item.category || 'غير مصنف';
+      if (!acc[category]) acc[category] = [];
+      acc[category].push(item);
+      return acc;
+  }, {});
+  const categoryEntries = Object.entries(categories);
+
+  for (let i = 0; i < categoryEntries.length; i += 2) {
+      const page = document.createElement('div');
+      page.className = 'page';
+
+      const [frontCat, frontItems] = categoryEntries[i];
+      const frontContent = createPageSideContent(frontCat, frontItems);
+      
+      const backEntry = categoryEntries[i + 1];
+      const backContent = backEntry ? createPageSideContent(backEntry[0], backEntry[1]) : '';
+
+      page.innerHTML = `<div class="page-front">${frontContent}</div><div class="page-back">${backContent}</div>`;
+      if (!backContent) hasSingleLastPage = true; // إذا لم يكن هناك محتوى خلفي، فهذه صفحة فردية
+      bookElement.appendChild(page); // إضافة الصفحة مباشرة إلى الكتاب
+      pages.push(page);
   }
   // إضافة event listeners لأزرار التعديل والحذف الجديدة
   addAdminActionListeners();
@@ -541,46 +727,140 @@ async function renderMenu(){
   applyFlipState();
 }
 
+/* ================ منطق سحب وتقليب الصفحات ================ */
+
+// تحديد الصفحة التي يتم سحبها واتجاه السحب
+function handleDragStart(e) {
+    if (!isBookOpen || isDragging || !pages.length) return;
+
+    const rect = bookElement.getBoundingClientRect();
+    const clickX = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+
+    // إذا كان السحب من النصف الأيسر للكتاب (للخلف)
+    if (clickX < rect.width / 2) {
+        if (currentPageIndex <= 0) return; // لا يمكن الرجوع من الغلاف
+        dragDirection = 'prev';
+        draggedPage = pages[currentPageIndex - 1]; // الصفحة المستهدفة هي آخر صفحة مقلوبة
+    } 
+    // إذا كان السحب من النصف الأيمن للكتاب (للأمام)
+    else {
+        if (currentPageIndex >= pages.length) return; // لا يمكن التقدم بعد النهاية
+        dragDirection = 'next';
+        draggedPage = pages[currentPageIndex]; // الصفحة المستهدفة هي الصفحة الحالية
+    }
+
+    isDragging = true;
+    dragStartPos = e.touches ? e.touches[0].clientX : e.clientX;
+    draggedPage.classList.add('dragging');
+    e.preventDefault();
+
+    window.addEventListener('mousemove', handleDragMove);
+    window.addEventListener('touchmove', handleDragMove);
+    window.addEventListener('mouseup', handleDragEnd);
+    window.addEventListener('touchend', handleDragEnd);
+}
+
+// تحريك الصفحة بصريًا أثناء السحب
+function handleDragMove(e) {
+    if (!isDragging || !draggedPage) return;
+
+    const currentX = e.touches ? e.touches[0].clientX : e.clientX;
+    const deltaX = currentX - dragStartPos;
+
+    if (dragDirection === 'next') {
+        const rotation = Math.max(-180, Math.min(0, (deltaX / draggedPage.offsetWidth) * 180));
+        draggedPage.style.transform = `rotateY(${rotation}deg)`;
+    } else if (dragDirection === 'prev') {
+        const rotation = Math.max(-180, Math.min(0, -180 + (deltaX / draggedPage.offsetWidth) * 180));
+        draggedPage.style.transform = `rotateY(${rotation}deg)`;
+    }
+}
+
+// إنهاء عملية السحب وتحديد ما إذا كان سيتم التقليب
+function handleDragEnd(e) {
+    if (!isDragging || !draggedPage) return;
+
+    isDragging = false;
+    draggedPage.classList.remove('dragging');
+
+    const currentX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+    const deltaX = currentX - dragStartPos;
+    const flipThreshold = draggedPage.offsetWidth / 3; // يجب أن يسحب ثلث الصفحة على الأقل
+
+    if (dragDirection === 'next' && deltaX < -flipThreshold) {
+        // أكمل التقليب للصفحة التالية
+        playFlipSound();
+        nextBtn.click();
+    } else if (dragDirection === 'prev' && deltaX > flipThreshold) {
+        // أكمل التقليب للصفحة السابقة
+        playFlipSound();
+        prevBtn.click();
+    } else {
+        // لم يتم الوصول للحد، أعد الصفحة لمكانها
+        applyFlipState();
+    }
+
+    // تنظيف
+    draggedPage = null;
+    dragDirection = '';
+    window.removeEventListener('mousemove', handleDragMove);
+    window.removeEventListener('touchmove', handleDragMove);
+    window.removeEventListener('mouseup', handleDragEnd);
+    window.removeEventListener('touchend', handleDragEnd);
+}
+
+bookElement.addEventListener('mousedown', handleDragStart);
+bookElement.addEventListener('touchstart', handleDragStart, { passive: false });
+
+
 /* تعابير مساعدة */
 function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]); }
 
-/* تحكم بالصفحات (تقليب) */
+/* تحكم بحالة الكتاب والصفحات (تقليب) */
 function applyFlipState(){
   if (!isBookOpen) {
     book.classList.remove('open');
+    book.classList.remove('end'); // تأكد من إزالته عند الإغلاق
     return;
   }
+
+  // لم نعد بحاجة لحالة النهاية .end
   book.classList.add('open');
 
   const total = pages.length;
   pages.forEach((page, i) => {
     // الصفحة تُقلب إذا كان ترتيبها أقل من الصفحة الحالية المعروضة
     const isFlipped = i < currentPageIndex;
-    const isCurrentVisiblePage = i === currentPageIndex;
 
     page.style.transform = isFlipped ? 'rotateY(-180deg)' : 'rotateY(0deg)';
     
-    // z-index: الصفحات المقلوبة تأخذ ترتيب تصاعدي من الأسفل.
-    // الصفحات غير المقلوبة تأخذ ترتيب تنازلي من الأعلى.
+    // الصفحات المقلوبة تأخذ ترتيبًا تصاعديًا (z-index: 1, 2, 3...).
+    // الصفحات غير المقلوبة تأخذ ترتيبًا تنازليًا (z-index: 5, 4, 3...).
+    // هذا يضمن أن الصفحة الحالية دائمًا في الأعلى.
     page.style.zIndex = isFlipped ? i + 1 : total - i;
   });
 }
 
 /* أزرار التالي / السابق */
 nextBtn.addEventListener('click', ()=> {
-  if (!isBookOpen || currentPageIndex >= pages.length -1) return;
+  if (!isBookOpen || currentPageIndex >= pages.length) return; // لا تتجاوز عدد الصفحات
+  playFlipSound();
   currentPageIndex++;
   applyFlipState();
 });
 prevBtn.addEventListener('click', ()=> {
   if (!isBookOpen) return;
-  if(currentPageIndex > 0) currentPageIndex--;
-  else { // لو كنا في الصفحة الأولى ونضغط "سابق"، نغلق الكتاب
+  playFlipSound();
+  if (currentPageIndex > 0) {
+    currentPageIndex--;
+  } else { // لو كنا في الصفحة الأولى ونضغط "سابق"، نغلق الكتاب
     isBookOpen = false;
   }
   applyFlipState();
 });
 cover.addEventListener('click', ()=> {
+  if (isBookOpen) return; // لا تفعل شيئًا إذا كان الكتاب مفتوحًا بالفعل
+  playFlipSound();
   isBookOpen = true;
   applyFlipState();
 });
