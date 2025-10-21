@@ -347,6 +347,9 @@ async function triggerWorkflow(workflowFileName, inputs) {
 
     if (res.status !== 204) { // 204 No Content is the expected success status
         const t = await res.text();
+        if (res.status === 404) {
+            throw new Error(`خطأ 404: لم يتم العثور على الـ Action. تأكد من وجود ملف '${workflowFileName}' في المسار الصحيح (.github/workflows/) على الفرع الرئيسي.`);
+        }
         throw new Error(`خطأ في تشغيل الـ Action: ${res.status} - ${t}`);
     }
 }
