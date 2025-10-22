@@ -56,10 +56,32 @@
     z-index: -1; /* يكون في الخلف دائمًا */
   }
 
+  /* الحلقات الذهبية */
+  .book-rings {
+    position: absolute;
+    top: 0;
+    left: 18px; /* تعديل موضع الحلقات الذهبية */
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly; /* توزيع متساوٍ */
+    padding: 40px 0; /* حشوة علوية وسفلية */
+    z-index: 100; /* فوق كل شيء */
+    pointer-events: none; /* حتى لا تعترض طريق الماوس */
+  }
+  .ring {
+    width: 30px; /* عرض قطعة السلك */
+    height: 8px; /* سماكة السلك */
+    background: linear-gradient(to right, #a27b41, #f0e2b6, #a27b41); /* تدرج لوني ذهبي معدني */
+    border-radius: 4px; /* حواف دائرية */
+    box-shadow: 1px 1px 5px rgba(0,0,0,0.5); /* ظل ناعم لإعطاء عمق */
+    transform: translateX(-24px); /* سحب الحلقة للخارج لتبدو بارزة */
+  }
+
   .page{position:absolute;top:0;left:0;width:100%;height:100%;backface-visibility:hidden;transform-origin:left;transition:transform 900ms cubic-bezier(.22,.9,.32,1);transform-style:preserve-3d; border-radius: 12px;}
   .page-front, .page-back {position:absolute;inset:0;padding:28px;backface-visibility:hidden;display:flex;flex-direction:column}
-  .page-front{background:#fdfcf9; box-shadow: inset 7px 0 15px -7px rgba(0,0,0,0.3);} /* ظل داخلي على الحافة اليسرى */
-  .page-back{background:#fbf8f3;transform:rotateY(180deg); box-shadow: inset 7px 0 15px -7px rgba(0,0,0,0.3);} /* ظل داخلي على الحافة اليمنى (بعد الدوران) */
+  .page-front{background:var(--card); box-shadow: inset 7px 0 15px -7px rgba(0,0,0,0.5);} /* ظل داخلي أغمق */
+  .page-back{background:var(--card);transform:rotateY(180deg); box-shadow: inset 7px 0 15px -7px rgba(0,0,0,0.5);} /* ظل داخلي أغمق */
   .page.dragging {
     transition: none; /* إلغاء الانتقال أثناء السحب للحصول على استجابة فورية */
     cursor: grabbing;
@@ -67,8 +89,8 @@
   .page h2{margin:0 0 8px 0;color:#c9a36b; position: relative; z-index: 1;} /* z-index to ensure title is above grid */
   .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:10px}
   .card{background:rgba(0,0,0,0.03);padding:10px;border-radius:10px;display:flex;gap:10px;align-items:center}
-  .card img{width:120px;height:80px;object-fit:cover;border-radius:8px}
-  .card .meta{flex:1}
+  .card img{width:120px;height:80px;object-fit:cover;border-radius:8px; background: #333;} /* خلفية داكنة للصور قبل التحميل */
+  .card .meta{flex:1; color: var(--muted);} /* تغيير لون الوصف ليكون أفتح */
   .price{color:var(--accent);font-weight:700}
   .controls{position:fixed;right:18px;bottom:18px;display:flex;gap:8px}
   /* Admin controls on cards */
@@ -90,7 +112,7 @@
   /* Helper classes */
   .pos-relative{position:relative}
   .flex-gap{display:flex;gap:8px;margin-top:12px}
-  .item-name{font-weight:700; color: #333;}
+  .item-name{font-weight:700; color: #e0e0e0;} /* لون فاتح لاسم الصنف */
   #pwToggle{position:absolute;left:10px;top:50%;transform:translateY(-50%);cursor:pointer;user-select:none;}
   .spinner { border: 3px solid rgba(255,255,255,0.2); border-top-color: var(--accent); border-radius: 50%; width: 18px; height: 18px; animation: spin 1s linear infinite; display:none; margin: 0 8px; } @keyframes spin { to { transform: rotate(360deg); } }</style>
 </head>
@@ -106,6 +128,13 @@
         <div class="cover" id="cover">
           <div class="cover-front"><img src="images/logo.png" alt="شعار أسماك الرشيدي" /></div>
           <div class="cover-back"></div>
+        </div>
+        <div class="book-rings">
+          <div class="ring"></div>
+          <div class="ring"></div>
+          <div class="ring"></div>
+          <div class="ring"></div>
+          <div class="ring"></div>
         </div>
         <div class="back-cover"></div>
         <!-- الصفحات ستضاف هنا مباشرة بواسطة JavaScript -->
