@@ -86,5 +86,13 @@
     "category": "مقلي",
     "image": "https://raw.githubusercontent.com/farok6799/Rashedy-Menu/main/images/1761124997651_images.jpeg",
     "addedAt": "2025-10-22T09:23:20.342Z"
+  },
+  {
+    "name": "سبيط مقلي",
+    "price": "600",
+    "desc": "",
+    "category": "مقلي",
+    "image": "https://raw.githubusercontent.com/farok6799/Rashedy-Menu/main/images/1761125238159_images__1_.jpeg",
+    "addedAt": "2025-10-22T09:27:20.897Z"
   }
 ]
