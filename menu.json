@@ -110,5 +110,13 @@
     "category": "مقلي",
     "image": "https://raw.githubusercontent.com/farok6799/Rashedy-Menu/main/images/1761276578365_images__27_.jpg",
     "addedAt": "2025-10-24T03:29:40.169Z"
+  },
+  {
+    "name": "سمك هامور مقلي",
+    "price": "400",
+    "desc": "",
+    "category": "مقلي",
+    "image": "https://raw.githubusercontent.com/farok6799/Rashedy-Menu/main/images/1761276682310_images__27_.jpg",
+    "addedAt": "2025-10-24T03:31:23.921Z"
   }
 ]
