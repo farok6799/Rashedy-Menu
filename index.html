@@ -100,7 +100,7 @@
   }
 
   .page{position:absolute;top:0;left:0;width:100%;height:100%;backface-visibility:hidden;transform-origin:left;transition:transform 900ms cubic-bezier(.22,.9,.32,1);transform-style:preserve-3d; border-radius: 12px;}
-  .page-front, .page-back {position:absolute;inset:0;padding:28px;backface-visibility:hidden;display:flex;flex-direction:column}
+  .page-front, .page-back {position:absolute;inset:0;padding:28px;backface-visibility:hidden;display:flex;flex-direction:column;}
   .page-front{background:var(--card); box-shadow: inset 7px 0 15px -7px rgba(0,0,0,0.5);} /* ظل داخلي أغمق */
   .page-back{background:var(--card);transform:rotateY(180deg); box-shadow: inset 7px 0 15px -7px rgba(0,0,0,0.5);} /* ظل داخلي أغمق */
   .page.dragging {
@@ -108,10 +108,10 @@
     cursor: grabbing;
   }
   .page h2{margin:0 0 8px 0;color:#c9a36b; position: relative; z-index: 1;} /* z-index to ensure title is above grid */
-  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:10px}
-  .card{background:rgba(0,0,0,0.03);padding:10px;border-radius:10px;display:flex;gap:10px;align-items:center}
-  .card img{width:120px;height:80px;object-fit:cover;border-radius:8px; background: #333;} /* خلفية داكنة للصور قبل التحميل */
-  .card .meta{flex:1; color: var(--muted);} /* تغيير لون الوصف ليكون أفتح */
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:10px}
+  .card{background:rgba(0,0,0,0.03);padding:10px;border-radius:10px;display:flex;flex-direction:column;gap:8px;align-items:center;text-align:center}
+  .card img{width:100%;height:70px;object-fit:cover;border-radius:8px; background: #333;}
+  .card .meta{color: var(--muted);}
   .price{color:var(--accent);font-weight:700}
   .controls{position:fixed;right:18px;bottom:18px;display:flex;gap:8px}
   /* Admin controls on cards */
@@ -129,7 +129,7 @@
   .danger{background:#ff4d4d;color:#111}
   footer.small{margin-top:10px;color:#888;font-size:12px}
   .controls { display: none; } /* إخفاء أزرار التحكم القديمة */
-  @media (max-width:880px){ .book{width:92vw;height:62vh} .grid{grid-template-columns:1fr} .card img{width:90px;height:70px} .panel{width:92vw} }
+  @media (max-width:880px){ .book{width:92vw;height:62vh} .grid{grid-template-columns:repeat(2,1fr)} .card img{height:60px} .panel{width:92vw} }
   /* Helper classes */
   .pos-relative{position:relative}
   .flex-gap{display:flex;gap:8px;margin-top:12px}
@@ -341,13 +341,14 @@ const GITHUB_BRANCH = 'main'; // أو 'master' لو بتستخدمه
 const MENU_JSON_PATH = 'menu.json';
 const INFO_JSON_PATH = 'info.json';
 const IMAGES_FOLDER = 'images/';
+const ITEMS_PER_PAGE_SIDE = 6; // أقصى عدد للأصناف في كل وجه من الصفحة
 
 /* ============ إعداد باسورد مخزن على شكل هاش SHA-256 ============
    القيمة هنا تمثل hash('1234') بالـ SHA-256. لتغيير الباسورد:
    احسب SHA-256 لكلمة جديدة (يمكنني أديك أداة لو حبيت) وغيّر القيمة.
    current for '1234' hashed:
 */
-const PASSWORD_HASH = '7f41cb340e3b6420e8274fe3e82df0dd965e4428a583299688d6d125cd1c6be3'; // sha256("1234")
+const PASSWORD_HASH = '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4'; // sha256("1234")
 
 /* ================== عناصر DOM ================== */
 const adminBtn = document.getElementById('adminBtn');
@@ -784,7 +785,7 @@ function createPageSideContent(category, items) {
                 <div class="meta">
                     <div class="item-name">${escapeHtml(it.name)}</div>
                     <div style="color:#888;font-size:13px">${escapeHtml(it.desc||'')}</div>
-                    <div class="price">${escapeHtml(it.price)}</div>
+                    <div class="price" style="direction: ltr;">${escapeHtml(it.price)} L.E</div>
                     <div class="card-admin-controls">
                         <button class="edit-btn" data-id="${escapeHtml(it.addedAt)}">تعديل</button>
                         <button class="delete-btn" data-id="${escapeHtml(it.addedAt)}">حذف</button>
@@ -801,42 +802,53 @@ function createPageSideContent(category, items) {
 
 /* عرض المنيو: نقسم حسب الفئات */
 async function renderMenu(){
-  loadAndRenderInfo(); // تحميل العنوان والهاتف
-  // إزالة الصفحات القديمة قبل إعادة البناء
-  bookElement.querySelectorAll('.page').forEach(p => p.remove());
-  pages = [];
+    loadAndRenderInfo(); // تحميل العنوان والهاتف
+    bookElement.querySelectorAll('.page').forEach(p => p.remove());
+    pages = [];
 
-  const menu = await loadMenuJson();
-  
-  const categories = menu.reduce((acc, item) => {
-      const category = item.category || 'غير مصنف';
-      if (!acc[category]) acc[category] = [];
-      acc[category].push(item);
-      return acc;
-  }, {});
-  const categoryEntries = Object.entries(categories);
+    const menu = await loadMenuJson();
+    
+    const categories = menu.reduce((acc, item) => {
+        const category = item.category || 'غير مصنف';
+        if (!acc[category]) acc[category] = [];
+        acc[category].push(item);
+        return acc;
+    }, {});
 
-  for (let i = 0; i < categoryEntries.length; i += 2) {
-      const page = document.createElement('div');
-      page.className = 'page';
+    // 1. إنشاء قائمة مسطحة بجميع "أوجه الصفحات" المطلوبة
+    const pageSides = [];
+    for (const [categoryName, items] of Object.entries(categories)) {
+        if (items.length <= ITEMS_PER_PAGE_SIDE) {
+            pageSides.push({ category: categoryName, items: items });
+        } else {
+            // تقسيم الفئة الكبيرة إلى أجزاء
+            for (let i = 0; i < items.length; i += ITEMS_PER_PAGE_SIDE) {
+                const chunk = items.slice(i, i + ITEMS_PER_PAGE_SIDE);
+                const part = (i / ITEMS_PER_PAGE_SIDE) + 1;
+                pageSides.push({ category: `${categoryName} (جزء ${part})`, items: chunk });
+            }
+        }
+    }
 
-      const [frontCat, frontItems] = categoryEntries[i];
-      const frontContent = createPageSideContent(frontCat, frontItems);
-      
-      const backEntry = categoryEntries[i + 1];
-      const backContent = backEntry ? createPageSideContent(backEntry[0], backEntry[1]) : '';
+    // 2. بناء الصفحات الفعلية من قائمة "أوجه الصفحات"
+    for (let i = 0; i < pageSides.length; i += 2) {
+        const page = document.createElement('div');
+        page.className = 'page';
 
-      page.innerHTML = `<div class="page-front">${frontContent}</div><div class="page-back">${backContent}</div>`;
-      if (!backContent) hasSingleLastPage = true; // إذا لم يكن هناك محتوى خلفي، فهذه صفحة فردية
-      bookElement.appendChild(page); // إضافة الصفحة مباشرة إلى الكتاب
-      pages.push(page);
-  }
-  // إضافة event listeners لأزرار التعديل والحذف الجديدة
-  addAdminActionListeners();
+        const frontSide = pageSides[i];
+        const frontContent = createPageSideContent(frontSide.category, frontSide.items);
+        
+        const backSide = pageSides[i + 1];
+        const backContent = backSide ? createPageSideContent(backSide.category, backSide.items) : '';
 
-  // افتراضياً لو مفيش صفحات ابقِ الغلاف ظاهر فقط
-  currentPageIndex = 0;
-  applyFlipState();
+        page.innerHTML = `<div class="page-front">${frontContent}</div><div class="page-back">${backContent}</div>`;
+        bookElement.appendChild(page);
+        pages.push(page);
+    }
+
+    addAdminActionListeners();
+    currentPageIndex = 0;
+    applyFlipState();
 }
 
 /* ================ منطق سحب وتقليب الصفحات ================ */
