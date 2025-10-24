@@ -102,5 +102,13 @@
     "category": "مقلي",
     "image": "https://raw.githubusercontent.com/farok6799/Rashedy-Menu/main/images/1761276344397_images__26_.jpg",
     "addedAt": "2025-10-24T03:25:45.706Z"
+  },
+  {
+    "name": "سمك شعور مقلي",
+    "price": "450",
+    "desc": "",
+    "category": "مقلي",
+    "image": "https://raw.githubusercontent.com/farok6799/Rashedy-Menu/main/images/1761276578365_images__27_.jpg",
+    "addedAt": "2025-10-24T03:29:40.169Z"
   }
 ]
