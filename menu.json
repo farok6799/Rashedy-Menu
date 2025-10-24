@@ -94,5 +94,13 @@
     "category": "مقلي",
     "image": "https://raw.githubusercontent.com/farok6799/Rashedy-Menu/main/images/1761125238159_images__1_.jpeg",
     "addedAt": "2025-10-22T09:27:20.897Z"
+  },
+  {
+    "name": "ماكريل مقلي",
+    "price": "400",
+    "desc": "",
+    "category": "مقلي",
+    "image": "https://raw.githubusercontent.com/farok6799/Rashedy-Menu/main/images/1761276344397_images__26_.jpg",
+    "addedAt": "2025-10-24T03:25:45.706Z"
   }
 ]
