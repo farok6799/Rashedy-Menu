@@ -141,6 +141,11 @@
   @media (max-width: 420px) {
     .grid { grid-template-columns: 1fr; } /* عمود واحد فقط */
     .page-front, .page-back { padding: 20px; } /* تقليل الحشوة قليلاً */
+    .card img {
+      width: 120px;  /* تحديد عرض ثابت للصورة */
+      height: 90px; /* زيادة الارتفاع ليتناسب مع العرض الجديد */
+      align-self: center; /* التأكد من أنها في المنتصف */
+    }
   }
   .pos-relative{position:relative}
   .flex-gap{display:flex;gap:8px;margin-top:12px}
