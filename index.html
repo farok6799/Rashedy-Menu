@@ -111,7 +111,7 @@
     position: absolute; /* تحديد الموضع بشكل مطلق لضمان الأبعاد الصحيحة */
     inset: 0; /* يملأ العنصر الأب (page-front/page-back) */
     padding: 28px; /* نقل الحشوة إلى هنا */
-    overflow-y: auto; /* يسمح بالتمرير العمودي عند الحاجة */
+    overflow-y: scroll; /* يسمح بالتمرير العمودي دائماً لتجنب مشاكل الحساب */
     -webkit-overflow-scrolling: touch; /* لتحسين سلاسة التمرير على iOS */
   }
   .page h2{margin:0 0 8px 0;color:#c9a36b; position: relative; z-index: 1;} /* z-index to ensure title is above grid */
@@ -138,6 +138,11 @@
   .controls { display: none; } /* إخفاء أزرار التحكم القديمة */
   @media (max-width:880px){ .book{width:92vw;height:62vh} .grid{grid-template-columns:repeat(2,1fr)} .card img{height:60px} .panel{width:92vw} }
   /* Helper classes */
+  /* For very narrow screens like iPhone SE/XS portrait */
+  @media (max-width: 420px) {
+    .grid { grid-template-columns: 1fr; } /* عمود واحد فقط */
+    .scroll-wrapper { padding: 20px; } /* تقليل الحشوة قليلاً */
+  }
   .pos-relative{position:relative}
   .flex-gap{display:flex;gap:8px;margin-top:12px}
   .item-name{font-weight:700; color: #e0e0e0;} /* لون فاتح لاسم الصنف */
