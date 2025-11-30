@@ -100,7 +100,7 @@
   }
 
   .page{position:absolute;top:0;left:0;width:100%;height:100%;backface-visibility:hidden;transform-origin:left;transition:transform 900ms cubic-bezier(.22,.9,.32,1);transform-style:preserve-3d; border-radius: 12px;}
-  .page-front, .page-back {position:absolute;inset:0;padding:28px;backface-visibility:hidden;display:flex;flex-direction:column;}
+  .page-front, .page-back {position:absolute;inset:0;backface-visibility:hidden;} /* إزالة padding و flex */
   .page-front{background:var(--card); box-shadow: inset 7px 0 15px -7px rgba(0,0,0,0.5);} /* ظل داخلي أغمق */
   .page-back{background:var(--card);transform:rotateY(180deg); box-shadow: inset 7px 0 15px -7px rgba(0,0,0,0.5);} /* ظل داخلي أغمق */
   .page.dragging {
@@ -108,9 +108,11 @@
     cursor: grabbing;
   }
   .scroll-wrapper {
-    flex: 1; /* يأخذ المساحة المتبقية */
+    position: absolute; /* تحديد الموضع بشكل مطلق لضمان الأبعاد الصحيحة */
+    inset: 0; /* يملأ العنصر الأب (page-front/page-back) */
+    padding: 28px; /* نقل الحشوة إلى هنا */
     overflow-y: auto; /* يسمح بالتمرير العمودي عند الحاجة */
-    min-height: 0; /* ضروري ليعمل التمرير داخل flexbox */
+    -webkit-overflow-scrolling: touch; /* لتحسين سلاسة التمرير على iOS */
   }
   .page h2{margin:0 0 8px 0;color:#c9a36b; position: relative; z-index: 1;} /* z-index to ensure title is above grid */
   .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:10px}
