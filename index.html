@@ -100,18 +100,12 @@
   }
 
   .page{position:absolute;top:0;left:0;width:100%;height:100%;backface-visibility:hidden;transform-origin:left;transition:transform 900ms cubic-bezier(.22,.9,.32,1);transform-style:preserve-3d; border-radius: 12px;}
-  .page-front, .page-back {position:absolute;inset:0;padding:28px;backface-visibility:hidden;display:flex;flex-direction:column;} /* إعادة flex والحشوة */
+  .page-front, .page-back {position:absolute;inset:0;padding:28px;backface-visibility:hidden;display:flex;flex-direction:column;}
   .page-front{background:var(--card); box-shadow: inset 7px 0 15px -7px rgba(0,0,0,0.5);} /* ظل داخلي أغمق */
   .page-back{background:var(--card);transform:rotateY(180deg); box-shadow: inset 7px 0 15px -7px rgba(0,0,0,0.5);} /* ظل داخلي أغمق */
   .page.dragging {
     transition: none; /* إلغاء الانتقال أثناء السحب للحصول على استجابة فورية */
     cursor: grabbing;
-  }
-  .scroll-wrapper {
-    flex: 1; /* يأخذ المساحة المتبقية */
-    min-height: 0; /* خدعة ضرورية لعمل التمرير داخل flexbox */
-    overflow-y: auto; /* يسمح بالتمرير العمودي عند الحاجة */
-    -webkit-overflow-scrolling: touch; /* لتحسين سلاسة التمرير على iOS */
   }
   .page h2{margin:0 0 8px 0;color:#c9a36b; position: relative; z-index: 1;} /* z-index to ensure title is above grid */
   .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:10px}
@@ -137,11 +131,6 @@
   .controls { display: none; } /* إخفاء أزرار التحكم القديمة */
   @media (max-width:880px){ .book{width:92vw;height:62vh} .grid{grid-template-columns:repeat(2,1fr)} .card img{height:60px} .panel{width:92vw} }
   /* Helper classes */
-  /* For very narrow screens like iPhone SE/XS portrait */
-  @media (max-width: 420px) {
-    .grid { grid-template-columns: 1fr; } /* عمود واحد فقط */
-    .page-front, .page-back { padding: 20px; } /* تقليل الحشوة قليلاً */
-  }
   .pos-relative{position:relative}
   .flex-gap{display:flex;gap:8px;margin-top:12px}
   .item-name{font-weight:700; color: #e0e0e0;} /* لون فاتح لاسم الصنف */
@@ -806,10 +795,8 @@ function createPageSideContent(category, items) {
         `;
     }
     return `
-        <div class="scroll-wrapper">
-            <h2>${escapeHtml(category)}</h2>
-            <div class="grid">${gridHtml}</div>
-        </div>
+        <h2>${escapeHtml(category)}</h2>
+        <div class="grid">${gridHtml}</div>
     `;
 }
 
